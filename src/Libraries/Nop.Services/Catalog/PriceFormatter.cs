@@ -62,8 +62,23 @@ public partial class PriceFormatter : IPriceFormatter
 
         string result;
         if (!string.IsNullOrEmpty(targetCurrency.CustomFormatting))
-            //custom formatting specified by a store owner
-            result = amount.ToString(targetCurrency.CustomFormatting);
+            //XD Update: don't show decimals if not there
+            if (targetCurrency.CustomFormatting == "0.#0")
+            {
+                if (amount % 1 == 0) //integer
+                {
+                    result = amount.ToString("C0", new CultureInfo(targetCurrency.DisplayLocale));
+                }
+                else //decimal
+                {
+                    result = amount.ToString("C", new CultureInfo(targetCurrency.DisplayLocale));
+                }
+            }
+            else
+            {
+                //custom formatting specified by a store owner
+                result = amount.ToString(targetCurrency.CustomFormatting);
+            }
         else
         {
             if (!string.IsNullOrEmpty(targetCurrency.DisplayLocale))
