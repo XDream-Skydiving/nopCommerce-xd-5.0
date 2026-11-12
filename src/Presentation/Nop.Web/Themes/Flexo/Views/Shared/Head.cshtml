@@ -1,0 +1,38 @@
+@*
+    Flexo by NopAdvance team
+    Copyright (c) 2026 NopAdvance LLP. All rights reserved.
+    Proprietary software. Unauthorized redistribution is prohibited.
+    License terms: https://nopadvance.com/eula
+*@
+@using Nop.Core.Domain.Catalog
+@using Nop.Services.Helpers
+@using Nop.Services.Themes
+
+@inject CatalogSettings catalogSettings
+@inject IThemeContext themeContext
+@inject IUserAgentHelper userAgentHelper
+@inject Nop.Core.IStoreContext storeContext
+@{
+    Layout = "";
+    var themeName = await themeContext.GetWorkingThemeNameAsync();
+    var supportRtl = await Html.ShouldUseRtlThemeAsync();
+    var store =await storeContext.GetCurrentStoreAsync();
+    //add main CSS file
+    NopHtml.AppendCssFileParts($"~/Themes/{themeName}/Content/css/styles{(supportRtl ? ".rtl" : "")}.css");
+    
+    //add swiper css file
+    if (catalogSettings.DisplayAllPicturesOnCatalogPages)
+    {
+        NopHtml.AppendCssFileParts("~/lib_npm/swiper/swiper-bundle.min.css");
+    }
+    //add jQuery UI css file
+    NopHtml.AppendCssFileParts("~/lib_npm/jquery-ui-dist/jquery-ui.min.css");
+
+    NopHtml.AppendCssFileParts($"~/Themes/{themeName}/Content/css/animate.css");
+    NopHtml.AppendCssFileParts($"~/Themes/{themeName}/Content/css/owl.carousel.css");
+    NopHtml.AppendCssFileParts($"~/Themes/{themeName}/Content/css/font-awesome.min.css");
+    NopHtml.AppendCssFileParts("~/Plugins/NopAdvance.Theme.Flexo/Themes/Flexo/Content/css/customstyles-" + store.Id + ".css");
+    <link href="https://fonts.googleapis.com/css2?family=Arimo:wght@400;700&display=swap" as="style" rel="stylesheet preload prefetch">
+    <link href="https://fonts.googleapis.com/css?family=Montserrat:300,400,500,600,700&display=swap" as="style" rel="stylesheet preload prefetch">
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" as="style" rel="stylesheet preload prefetch">    
+}

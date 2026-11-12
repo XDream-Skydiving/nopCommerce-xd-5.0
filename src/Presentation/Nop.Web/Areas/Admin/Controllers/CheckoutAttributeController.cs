@@ -116,7 +116,8 @@ public partial class CheckoutAttributeController : BaseAdminController
                     case AttributeControlType.RadioList:
                     case AttributeControlType.ColorSquares:
                     case AttributeControlType.ImageSquares:
-                    {
+                    case AttributeControlType.TextSquares:
+                        {
                         var selectedAttribute = model.ConditionModel.ConditionAttributes
                             .FirstOrDefault(x => x.Id == model.ConditionModel.SelectedAttributeId);
                         var selectedValue = selectedAttribute?.SelectedValueId;

@@ -1,0 +1,32 @@
+﻿@model PriceRangeFilterModel
+
+<div class="product-filter price-range-filter">
+    <h2 class="filter-title">
+        @T("Filtering.PriceRangeFilter")
+    </h2>
+    <div class="filter-content">
+        <div class="price-filter">
+            <div class="row">
+                <input type="number" id="price-from" value="@Model.SelectedPriceRange.From" placeholder="@Model.AvailablePriceRange.From" min="@Model.AvailablePriceRange.From" max="@Model.AvailablePriceRange.To">
+                <input type="number" id="price-to" value="@Model.SelectedPriceRange.To" placeholder="@Model.AvailablePriceRange.To" min="@Model.AvailablePriceRange.From" max="@Model.AvailablePriceRange.To">
+            </div>
+            <button class="button-2" id="price-filter-apply">@T("Shipping.EstimateShippingPopUp.SelectShippingOption.Button")</button>
+        </div>
+        <script asp-location="Footer">
+            $(function() {
+                $('#price-filter-apply').on('click', function () {
+                    CatalogProducts.getProducts();
+                });
+
+                $(CatalogProducts).on('before', function (e) {
+                    var from = $('#price-from').val();
+                    var to = $('#price-to').val();
+                    if (from && to) {
+                        e.payload.urlBuilder
+                            .addParameter('price', from + '-' + to);
+                    }
+                });
+            });
+        </script>
+    </div>
+</div>

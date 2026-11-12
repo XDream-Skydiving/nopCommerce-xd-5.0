@@ -1,0 +1,66 @@
+@model MenuModel
+
+@using Nop.Core.Domain.Menus;
+
+<script src="~/js/public.menu.js" asp-location="Footer"></script>
+<script asp-location="Footer">
+    mainMenu.init('.menu-container .menu__item-toggle', 'menu-dropdown--active');
+
+    $(function () {
+        var $menu = $('.menu-container');
+        var $toggle = $('.header-burger');
+
+        function updateMenuTop() {
+            $menu.css('top', $('.header-logo')[0].getBoundingClientRect().bottom + 10 + 'px');
+        }
+
+        function toggleMenu() {
+            $menu.slideToggle(400);
+            $('body').toggleClass('menu-open');
+            updateMenuTop();
+            $toggle.attr('aria-expanded', $('body').hasClass('menu-open') ? 'true' : 'false');
+        }
+
+        $(window).on('resize', updateMenuTop);
+
+        $toggle.on('click', toggleMenu);
+
+        $toggle.on('keydown', function (event) {
+            if (event.keyCode === 13 || event.keyCode === 32) {
+                event.preventDefault();
+                toggleMenu();
+            }
+        });
+    });
+</script>
+
+<button type="button" id="menu-@Model.Id" class="header-burger" aria-controls="menu-panel-@Model.Id" aria-expanded="false" aria-label="@T("Header.SkipNavigation.Text")">
+    <span class="header-burger__inner">
+        <span class="header-burger__line"></span>
+    </span>
+</button>
+<nav class="menu-container menu-dropdown" id="menu-panel-@Model.Id">
+    <div role="menu" class="menu @Model.CssClass" aria-labelledby="menu-@Model.Id">
+        @foreach (var menuItem in Model.Items)
+        {
+            @if (menuItem.ChildrenItems.Any())
+            {
+                @switch (menuItem.Template)
+                {
+                    case MenuItemTemplate.Grid:
+                        @await Html.PartialAsync("~/Views/Shared/Components/MainMenu/_MenuItem.Grid.cshtml", menuItem)
+                        break;
+                    default:
+                        @await Html.PartialAsync("~/Views/Shared/Components/MainMenu/_MenuItem.List.cshtml", menuItem)
+                        break;
+                }
+            }
+            else
+            {
+                <div class="menu__item @menuItem.CssClass" role="menuitem">
+                    @await Html.PartialAsync("~/Views/Shared/Components/MainMenu/_MenuItem.cshtml", menuItem)
+                </div>
+            }
+        }
+    </div>
+</nav>

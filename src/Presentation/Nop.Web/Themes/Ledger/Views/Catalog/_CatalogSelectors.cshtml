@@ -1,0 +1,82 @@
+﻿@model CatalogProductsModel
+@inject Nop.Services.Localization.ILocalizationService localizationService
+@inject Nop.Core.IWorkContext workContext
+
+@if (Model.Products.Count <= 0)
+{
+    var workingLanguageId = (await workContext.GetWorkingLanguageAsync()).Id;
+    var catalogNoProductsText = await localizationService.GetResourceAsync("Plugin.LiStock.Theme.CatalogNoProducts", workingLanguageId, logIfNotFound: false, returnEmptyIfNotFound: true);
+    if (!string.IsNullOrEmpty(catalogNoProductsText))
+    {
+        <div class="no-result">
+            @catalogNoProductsText
+        </div>
+    }
+} else {
+    <div class="product-selectors">
+        @*view mode*@
+        @if (Model.AllowProductViewModeChanging && Model.AvailableViewModes.Count > 1)
+        {
+            <div class="product-viewmode">
+                <span>@T("Catalog.ViewMode")</span>
+                @Html.DropDownList("products-viewmode", Model.AvailableViewModes, new { aria_label = T("Catalog.ViewMode") })
+            </div>
+            <script asp-location="Footer">
+                $(function() {
+                    var $viewModeEl = $('#products-viewmode');
+                    $viewModeEl.on('change', function () {
+                        CatalogProducts.getProducts();
+                    });
+
+                    $(CatalogProducts).on('before', function (e) {
+                        e.payload.urlBuilder
+                            .addParameter('viewmode', $viewModeEl.val());
+                    });
+                });
+            </script>
+        }
+
+        @if (Model.AllowProductSorting)
+        {
+            <div class="product-sorting">
+                <span>@T("Catalog.OrderBy")</span>
+                @Html.DropDownList("products-orderby", Model.AvailableSortOptions, new { aria_label = T("Catalog.OrderBy.Label") })
+            </div>
+            <script asp-location="Footer">
+                $(function() {
+                    var $orderByEl = $('#products-orderby');
+                    $orderByEl.on('change', function () {
+                        CatalogProducts.getProducts();
+                    });
+
+                    $(CatalogProducts).on('before', function (e) {
+                        e.payload.urlBuilder
+                            .addParameter('orderby', $orderByEl.val());
+                    });
+                });
+            </script>
+        }
+
+        @if (Model.AllowCustomersToSelectPageSize)
+        {
+            <div class="product-page-size">
+                <span>@T("Catalog.PageSize")</span>
+                @Html.DropDownList("products-pagesize", Model.PageSizeOptions, new { aria_label = T("Catalog.PageSize.Label") })
+                <span>@T("Catalog.PageSize.PerPage")</span>
+            </div>
+            <script asp-location="Footer">
+                $(function() {
+                    var $pageSizeEl = $('#products-pagesize');
+                    $pageSizeEl.on('change', function () {
+                        CatalogProducts.getProducts();
+                    });
+
+                    $(CatalogProducts).on('before', function (e) {
+                        e.payload.urlBuilder
+                            .addParameter('pagesize', $pageSizeEl.val());
+                    });
+                });
+            </script>
+        }
+    </div>
+}

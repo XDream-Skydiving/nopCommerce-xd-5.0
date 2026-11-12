@@ -249,6 +249,7 @@ public partial class CustomerController : BaseAdminController
                 case AttributeControlType.Datepicker:
                 case AttributeControlType.ColorSquares:
                 case AttributeControlType.ImageSquares:
+                case AttributeControlType.TextSquares:
                 case AttributeControlType.FileUpload:
                 //not supported customer attributes
                 default:

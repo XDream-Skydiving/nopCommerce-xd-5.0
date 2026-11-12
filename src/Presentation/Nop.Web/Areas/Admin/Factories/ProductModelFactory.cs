@@ -381,6 +381,7 @@ public partial class ProductModelFactory : IProductModelFactory
                         case AttributeControlType.Checkboxes:
                         case AttributeControlType.ColorSquares:
                         case AttributeControlType.ImageSquares:
+                        case AttributeControlType.TextSquares:
                             if (!string.IsNullOrEmpty(productAttributeMapping.ConditionAttributeXml))
                             {
                                 //clear default selection

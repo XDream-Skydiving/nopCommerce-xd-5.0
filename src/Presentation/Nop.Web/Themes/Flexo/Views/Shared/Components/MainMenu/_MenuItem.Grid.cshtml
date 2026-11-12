@@ -1,0 +1,42 @@
+@*
+    Flexo by NopAdvance team
+    Copyright (c) 2026 NopAdvance LLP. All rights reserved.
+    Proprietary software. Unauthorized redistribution is prohibited.
+    License terms: https://nopadvance.com/eula
+*@
+@model MenuItemModel
+
+<div class="menu__item @(Model.ChildrenItems.Any() ? "menu-dropdown" : "") @Model.CssClass" data-item-id="@Model.Id" role="menuitem">
+    <div class="menu__item-toggle" aria-haspopup="menu">
+        @await Html.PartialAsync("_MenuItem.cshtml", Model)
+        <div class="menu-sublist-toggle">
+        </div>
+    </div>
+    <div class="menu__grid-view" role="menu" aria-label="@Model.Title">
+        <div class="menu__grid-content">
+            @foreach (var item in Model.ChildrenItems)
+            {
+                <div class="menu__group" role="menuitem">
+                    <a href="@item.Url" class="menu__image-link @(string.IsNullOrEmpty(item.Url) ? "menu__link--inactive" : "")">
+                        @if (item.Picture is not null)
+                        {
+                            <div class="menu-image">
+                                <img src="@item.Picture.ImageUrl" alt="@item.Picture.AlternateText" title="@item.Picture.Title" class="menu__image">
+                            </div>
+                        }
+                        <h4 class="menu__group-title">@item.Title</h4>
+                    </a>
+
+                    @if (item.ChildrenItems.Any())
+                    {
+                        foreach (var menuItem in item.ChildrenItems)
+                        {
+                            @await Html.PartialAsync("_MenuItem.cshtml", menuItem)
+                        }
+                    }
+                </div>
+
+            }
+        </div>
+    </div>
+</div>

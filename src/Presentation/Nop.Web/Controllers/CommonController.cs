@@ -165,6 +165,7 @@ public partial class CommonController : BasePublicController
                 case AttributeControlType.Datepicker:
                 case AttributeControlType.ColorSquares:
                 case AttributeControlType.ImageSquares:
+                case AttributeControlType.TextSquares:
                 case AttributeControlType.FileUpload:
                 default:
                     continue;

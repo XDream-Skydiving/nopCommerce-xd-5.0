@@ -416,6 +416,7 @@ public partial class ProductController : BaseAdminController
                 case AttributeControlType.RadioList:
                 case AttributeControlType.ColorSquares:
                 case AttributeControlType.ImageSquares:
+                case AttributeControlType.TextSquares:
                     ctrlAttributes = form[controlId];
                     if (!string.IsNullOrEmpty(ctrlAttributes))
                     {
@@ -666,6 +667,7 @@ public partial class ProductController : BaseAdminController
                     case AttributeControlType.RadioList:
                     case AttributeControlType.ColorSquares:
                     case AttributeControlType.ImageSquares:
+                    case AttributeControlType.TextSquares:
                         var ctrlAttributes = form[controlId];
                         if (!StringValues.IsNullOrEmpty(ctrlAttributes))
                         {

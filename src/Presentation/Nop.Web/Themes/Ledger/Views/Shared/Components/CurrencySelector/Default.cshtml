@@ -1,0 +1,68 @@
+@using Nop.Services.Helpers
+@model CurrencySelectorModel
+
+@inject IWebHelper webHelper
+
+@if (Model.AvailableCurrencies.Count > 1)
+{
+    var currentCurrency = Model.AvailableCurrencies.FirstOrDefault(x => x.Id.Equals(Model.CurrentCurrencyId));
+    var currentCurrencyText = currentCurrency == null
+        ? string.Empty
+        : !Model.DisplayCurrencySymbol
+            ? currentCurrency.Name
+            : T("Currency.Selector.Text.Pattern", currentCurrency.Name, currentCurrency.CurrencySymbol).Text;
+
+    <div class="currency-selector custom-select">
+        <button type="button" class="custom-select__toggle" aria-haspopup="listbox" aria-expanded="false" aria-label="@T("Currency.Selector.Label")">
+            <span class="custom-select__icon"></span>
+            <span class="custom-select__label">@currentCurrencyText</span>
+            <span class="custom-select__arrow"></span>
+        </button>
+        <div class="custom-select__panel">
+        @{
+            var returnUrl = webHelper.GetRawUrl(Context.Request);
+            var currencies = await Model.AvailableCurrencies.SelectAwait(async x => new SelectListItem
+            {
+                Text = !Model.DisplayCurrencySymbol ? x.Name : T("Currency.Selector.Text.Pattern", x.Name, x.CurrencySymbol).Text,
+                Value = Url.RouteUrl(NopRouteNames.Standard.CHANGE_CURRENCY, new { customercurrency = x.Id, returnUrl }, webHelper.GetCurrentRequestProtocol()),
+                Selected = x.Id.Equals(Model.CurrentCurrencyId)
+            }).ToListAsync();
+            <select id="customerCurrency" name="customerCurrency" asp-items="@currencies" onchange="setLocation(this.value);" aria-label="@T("Currency.Selector.Label")"></select>
+
+            <ul class="custom-select__list" role="listbox" aria-label="@T("Currency.Selector.Label")">
+                @foreach (var item in currencies)
+                {
+                    <li role="option" aria-selected="@item.Selected.ToString().ToLowerInvariant()" class="@(item.Selected ? "selected" : null)">
+                        <a href="@item.Value">@item.Text</a>
+                    </li>
+                }
+            </ul>
+        }
+        </div>
+    </div>
+    <script asp-location="Footer">
+        $(function () {
+            if (window.__customSelectInitialized) {
+                return;
+            }
+            window.__customSelectInitialized = true;
+
+            $(document).on('click', function (event) {
+                var $target = $(event.target);
+                $('.custom-select.active').each(function () {
+                    var $wrapper = $(this);
+                    if (!$target.closest($wrapper).length) {
+                        $wrapper.removeClass('active');
+                        $wrapper.find('.custom-select__toggle').attr('aria-expanded', 'false');
+                    }
+                });
+            });
+
+            $(document).on('click', '.custom-select__toggle', function () {
+                var $wrapper = $(this).closest('.custom-select');
+                var isActive = $wrapper.toggleClass('active').hasClass('active');
+                $(this).attr('aria-expanded', isActive ? 'true' : 'false');
+            });
+        });
+    </script>
+}

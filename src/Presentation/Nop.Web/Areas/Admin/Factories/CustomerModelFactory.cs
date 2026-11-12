@@ -304,6 +304,7 @@ public partial class CustomerModelFactory : ICustomerModelFactory
                     case AttributeControlType.Datepicker:
                     case AttributeControlType.ColorSquares:
                     case AttributeControlType.ImageSquares:
+                    case AttributeControlType.TextSquares:
                     case AttributeControlType.FileUpload:
                     default:
                         //not supported attribute control types

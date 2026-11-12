@@ -9,6 +9,7 @@ namespace Nop.Web.Areas.Admin.Models.Catalog;
 /// </summary>
 public partial record ProductAttributeValueModel : BaseNopEntityModel, ILocalizedModel<ProductAttributeValueLocalizedModel>
 {
+
     #region Ctor
 
     public ProductAttributeValueModel()

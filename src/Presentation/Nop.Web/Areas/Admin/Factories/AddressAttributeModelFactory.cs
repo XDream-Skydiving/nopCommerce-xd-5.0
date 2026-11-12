@@ -301,6 +301,7 @@ public partial class AddressAttributeModelFactory : IAddressAttributeModelFactor
                     break;
                 case AttributeControlType.ColorSquares:
                 case AttributeControlType.ImageSquares:
+                case AttributeControlType.TextSquares:
                 case AttributeControlType.Datepicker:
                 case AttributeControlType.FileUpload:
                 default:

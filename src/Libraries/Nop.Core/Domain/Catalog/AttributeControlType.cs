@@ -1,4 +1,4 @@
-namespace Nop.Core.Domain.Catalog;
+﻿namespace Nop.Core.Domain.Catalog;
 
 /// <summary>
 /// Represents an attribute control type
@@ -49,6 +49,12 @@ public enum AttributeControlType
     /// Image squares
     /// </summary>
     ImageSquares = 45,
+
+    //XD Update
+    /// <summary>
+    /// Text squares
+    /// </summary>
+    TextSquares = 55,
 
     /// <summary>
     /// Read-only checkboxes

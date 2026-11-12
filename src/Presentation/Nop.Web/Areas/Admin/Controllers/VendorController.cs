@@ -199,6 +199,7 @@ public partial class VendorController : BaseAdminController
                 case AttributeControlType.Datepicker:
                 case AttributeControlType.ColorSquares:
                 case AttributeControlType.ImageSquares:
+                case AttributeControlType.TextSquares:
                 case AttributeControlType.FileUpload:
                 //not supported vendor attributes
                 default:

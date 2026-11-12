@@ -1,0 +1,139 @@
+@*
+    Flexo by NopAdvance team
+    Copyright (c) 2026 NopAdvance LLP. All rights reserved.
+    Proprietary software. Unauthorized redistribution is prohibited.
+    License terms: https://nopadvance.com/eula
+*@
+@model FooterModel
+
+@using Nop.Core
+@using Nop.Core.Domain.Tax
+@using Nop.Core.Domain.Topics
+
+@inject IWorkContext workContext
+
+<footer class="footer">
+    <section class="footer-upper">
+        <div class="container">
+            @await Component.InvokeAsync(typeof(FooterMenuViewComponent))
+            <div class="footer-block follow-us">
+                <div class="social">
+                    <h2 class="title">
+                        @T("Footer.FollowUs")
+                    </h2>
+                    @await Component.InvokeAsync(typeof(SocialButtonsViewComponent))
+                </div>
+                @await Component.InvokeAsync(typeof(NewsLetterBoxViewComponent))
+            </div>
+        </div>
+    </section>
+    <section class="footer-lower">
+        <div class="container">
+            <div class="footer_left">
+                <div class="footer-info">
+                    <span class="footer-disclaimer">@T("Content.CopyrightNotice", DateTime.Now.Year, Model.StoreName)</span>
+                    @if (Model.DisplayTaxShippingInfoFooter)
+                    {
+                        var inclTax = await workContext.GetTaxDisplayTypeAsync() == TaxDisplayType.IncludingTax;
+                        <span class="footer-tax-shipping">
+                            @T(inclTax ? "Footer.TaxShipping.InclTax" : "Footer.TaxShipping.ExclTax", await NopUrl.RouteTopicUrlAsync("shippinginfo"))
+                        </span>
+                    }
+                </div>
+                @if (!Model.HidePoweredByNopCommerce)
+                {
+                    <div class="footer-powered-by remove-powered-by">
+                        @*Would you like to remove the "Powered by nopCommerce" link in the bottom of the footer?
+                    Please find more info at https://www.nopcommerce.com/nopcommerce-copyright-removal-key*@
+                        Powered by <a href="@(OfficialSite.Main)" target="_blank" @(Model.IsHomePage ? string.Empty : "rel=nofollow")>nopCommerce</a>
+                    </div>
+                }
+            </div>
+            @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = "flexotheme_paymentcardimage", additionalData = Model })
+            <div class="footer_right">
+                @*NopAdvance designed by footer link*@
+                <div class="footer-powered-by designed-by ml remove-designed-by">
+                    @*Would you like to remove the "Designed by nopAdvance" link in the bottom of the footer?
+                    Please find more info at https://www.nopadvance.com/eula.aspx*@
+                    Designed by <a href="https://www.nopadvance.com/">NopAdvance</a>
+                </div>
+                @await Component.InvokeAsync(typeof(StoreThemeSelectorViewComponent))
+            </div>
+        </div>
+    </section>
+    <div class="scrollToTop"></div>
+    @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.Footer, additionalData = Model })
+
+</footer>
+
+<script asp-location="Footer">
+    $(function() {
+        $('.block .title').on('click', function () {
+            var e = window, a = 'inner';
+            if (!('innerWidth' in window)) {
+                a = 'client';
+                e = document.documentElement || document.body;
+            }
+            var result = { width: e[a + 'Width'], height: e[a + 'Height'] };
+            $(this).siblings('.listbox').slideToggle('slow');
+        });
+
+        $('.product-filter .filter-title').on('click', function () {
+            var e = window, a = 'inner';
+            if (!('innerWidth' in window)) {
+                a = 'client';
+                e = document.documentElement || document.body;
+            }
+            var result = { width: e[a + 'Width'], height: e[a + 'Height'] };
+            if (result.width > 1002) {
+                $(this).siblings('.filter-content').slideToggle('slow');
+            }
+        });
+
+
+        //scroll block start
+
+        $(window).scroll(function () {
+            if ($(this).scrollTop() > 400) {
+                $('.scrollToTop').fadeIn();
+            } else {
+                $('.scrollToTop').fadeOut();
+            }
+        });
+
+        $('.scrollToTop').click(function () {
+            $('html, body').animate({ scrollTop: 0 }, 400);
+            return false;
+        });
+
+        //scroll block end
+    });
+
+    $(window).load(function () {
+        $('body').addClass('is-loaded');
+    });
+</script>
+<script asp-location="Footer">
+    $(document).ready(function () {
+
+        $(function () {
+            $('.lazy').Lazy();
+        });
+    });
+</script>
+<script asp-location="Footer">
+    $(document).ready(function () {
+         $(".page.request-page table.data-table").each(function () {
+             if (!$(this).parent().hasClass("table-wrapper")) {
+                 $(this).wrap("<div class='table-wrapper'></div>");
+             }
+         });
+     });
+</script>
+<script asp-location="Footer">
+$(document).ready(function() {
+    $('#Subscribed').click(function() {
+        $(this).addClass('input-checked');
+    });
+});
+</script>

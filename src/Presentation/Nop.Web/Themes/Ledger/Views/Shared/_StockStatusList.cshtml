@@ -1,0 +1,53 @@
+@model IEnumerable<Nop.Web.Framework.Models.BaseNopEntityModel>
+@using Nop.Core.Domain.Catalog
+@using Nop.Services.Catalog
+@inject IProductService productService
+@inject IProductAttributeService productAttributeService
+
+@*
+    Renders nothing: it only stores the stock status in CustomProperties["Ledger.InStock"] ("true"/"false")
+    of every model passed in, so that each product is looked at once and every view showing it agrees.
+
+    Model.InStock of the core is unreliable for ManageStockByAttributes: the core switch treats
+    "no combinations configured yet" as out of stock, while the availability text (a different
+    core code path) treats the same case as in stock.
+*@
+@{
+    var pendingItems = Model.Where(item => !item.CustomProperties.ContainsKey("Ledger.InStock")).ToList();
+    if (pendingItems.Count > 0)
+    {
+        //one query for the whole list instead of one per product
+        var products = (await productService.GetProductsByIdsAsync(pendingItems.Select(item => item.Id).Distinct().ToArray()))
+            .ToDictionary(product => product.Id);
+
+        foreach (var item in pendingItems)
+        {
+            var inStock = true;
+            if (products.TryGetValue(item.Id, out var product))
+            {
+                var isPreOrderAvailable = product.AvailableForPreOrder &&
+                    (!product.PreOrderAvailabilityStartDateTimeUtc.HasValue || product.PreOrderAvailabilityStartDateTimeUtc.Value >= DateTime.UtcNow);
+
+                if (isPreOrderAvailable)
+                {
+                    inStock = true;
+                }
+                else if (product.ManageInventoryMethod == ManageInventoryMethod.ManageStock)
+                {
+                    inStock = product.BackorderMode != BackorderMode.NoBackorders
+                        || await productService.GetTotalStockQuantityAsync(product) > 0;
+                }
+                else if (product.ManageInventoryMethod == ManageInventoryMethod.ManageStockByAttributes)
+                {
+                    var combinations = await productAttributeService.GetAllProductAttributeCombinationsAsync(product.Id);
+
+                    //no combinations configured yet - nothing restricts availability
+                    inStock = combinations == null || combinations.Count == 0
+                        || combinations.Any(c => c.StockQuantity > 0 || c.AllowOutOfStockOrders);
+                }
+            }
+
+            item.CustomProperties["Ledger.InStock"] = inStock ? "true" : "false";
+        }
+    }
+}

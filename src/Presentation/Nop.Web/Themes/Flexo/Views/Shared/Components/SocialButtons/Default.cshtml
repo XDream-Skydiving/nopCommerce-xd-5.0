@@ -1,0 +1,43 @@
+@*
+    Flexo by NopAdvance team
+    Copyright (c) 2026 NopAdvance LLP. All rights reserved.
+    Proprietary software. Unauthorized redistribution is prohibited.
+    License terms: https://nopadvance.com/eula
+*@
+@model SocialModel
+
+<ul class="networks">
+    @if (!string.IsNullOrEmpty(Model.FacebookLink))
+    {
+        <li class="facebook"><a href="@Model.FacebookLink" aria-label="@T("Footer.FollowUs.Facebook")" target="_blank" rel="noopener noreferrer"><i class="fa fa-facebook" aria-hidden="true"></i></a></li>
+    }
+    @if (!string.IsNullOrEmpty(Model.XLink))
+    {
+        <li class="twitter"><a href="@Model.XLink" aria-label="@T("Footer.FollowUs.X")" target="_blank" rel="noopener noreferrer"><i aria-hidden="true"></i></a></li>
+    }
+    @if (!string.IsNullOrEmpty(Model.YoutubeLink))
+    {
+        <li class="youtube"><a href="@Model.YoutubeLink" target="_blank" aria-label="@T("Footer.FollowUs.Youtube")" rel="noopener noreferrer"><i class="fa fa-youtube" aria-hidden="true"></i></a></li>
+    }
+    @if (!string.IsNullOrEmpty(Model.InstagramLink))
+    {
+        <li class="insta-icon"><a href="@Model.InstagramLink" aria-label="@T("Footer.FollowUs.Instagram")" target="_blank" rel="noopener noreferrer"><i class="fa fa-instagram"></i></a></li>
+    }
+    @if (!string.IsNullOrEmpty(Model.TikTokLink))
+    {
+        <li class="tiktok"><a href="@Model.TikTokLink" aria-label="@T("Footer.FollowUs.TikTok")" target="_blank" rel="noopener noreferrer"><i class="fa fa-music" aria-hidden="true"></i></a></li>
+    }
+    @if (!string.IsNullOrEmpty(Model.SnapchatLink))
+    {
+        <li class="snapchat"><a href="@Model.SnapchatLink" aria-label="@T("Footer.FollowUs.Snapchat")" target="_blank" rel="noopener noreferrer"><i class="fa fa-snapchat-ghost" aria-hidden="true"></i></a></li>
+    }
+    @if (!string.IsNullOrEmpty(Model.PinterestLink))
+    {
+        <li class="pinterest"><a href="@Model.PinterestLink" aria-label="@T("Footer.FollowUs.Pinterest")" target="_blank" rel="noopener noreferrer"><i class="fa fa-pinterest" aria-hidden="true"></i></a></li>
+    }
+    @if (!string.IsNullOrEmpty(Model.TumblrLink))
+    {
+        <li class="tumblr"><a href="@Model.TumblrLink" aria-label="@T("Footer.FollowUs.Tumblr")" target="_blank" rel="noopener noreferrer"><i class="fa fa-tumblr" aria-hidden="true"></i></a></li>
+    }
+    @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = "flexotheme_pinteresturl", additionalData = Model })
+</ul>

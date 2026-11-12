@@ -1,0 +1,21 @@
+@model IList<ProductOverviewModel>
+@{
+    await Html.RenderPartialAsync("_StockStatusList", Model);
+    var inStockProducts = Model.Where(item => item.CustomProperties["Ledger.InStock"] == "true").ToList();
+}
+@if (inStockProducts.Count > 0)
+{
+    <section class="product-grid bestsellers">
+        <h2 class="title">
+            @T("Bestsellers")
+        </h2>
+        <div class="item-grid">
+            @foreach (var item in inStockProducts)
+            {
+                <div class="item-box">
+                    @await Html.PartialAsync("_ProductBox", item)
+                </div>
+            }
+        </div>
+    </section>
+}

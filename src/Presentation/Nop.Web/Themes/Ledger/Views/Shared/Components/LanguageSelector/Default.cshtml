@@ -1,0 +1,88 @@
+@using Nop.Services.Helpers
+@model LanguageSelectorModel
+
+@inject IWebHelper webHelper
+
+@if (Model.AvailableLanguages.Count > 1)
+{
+    var returnUrl = webHelper.GetRawUrl(Context.Request);
+    var currentLanguage = Model.AvailableLanguages.FirstOrDefault(x => x.Id == Model.CurrentLanguageId);
+
+    <div class="language-selector custom-select">
+        <button type="button" class="custom-select__toggle" aria-haspopup="listbox" aria-expanded="false" aria-label="@T("Languages.Selector.Label")">
+            <span class="custom-select__icon"></span>
+            <span class="custom-select__label">@(currentLanguage?.Name)</span>
+            <span class="custom-select__arrow"></span>
+        </button>
+        <div class="custom-select__panel">
+        @{
+            if (Model.UseImages)
+            {
+                <ul class="language-list">
+                    @foreach (var lang in Model.AvailableLanguages)
+                    {
+                        <li>
+                            <a href="@Url.RouteUrl(NopRouteNames.Standard.CHANGE_LANGUAGE, new { langid = lang.Id, returnUrl }, webHelper.GetCurrentRequestProtocol())" title="@lang.Name">
+                                <img title='@lang.Name' alt='@lang.Name' @(lang.Id == Model.CurrentLanguageId ? " class=selected" : null)
+                                     src="@Url.Content("~/images/flags/" + @lang.FlagImageFileName) "/>
+                            </a>
+                        </li>
+                    }
+                </ul>
+            }
+            else
+            {
+                var languages = await Model.AvailableLanguages.SelectAwait(async lang => new SelectListItem
+                {
+                    Text = lang.Name,
+                    Value = Url.RouteUrl(NopRouteNames.Standard.CHANGE_LANGUAGE, new { langid = lang.Id, returnUrl }, webHelper.GetCurrentRequestProtocol()),
+                    Selected = lang.Id.Equals(Model.CurrentLanguageId)
+                }).ToListAsync();
+
+                <select id="customerlanguage" name="customerlanguage" asp-items="@languages" onchange="setLocation(this.value);" aria-label="@T("Languages.Selector.Label")"></select>
+            }
+
+            <ul class="custom-select__list" role="listbox" aria-label="@T("Languages.Selector.Label")">
+                @foreach (var lang in Model.AvailableLanguages)
+                {
+                    var isSelected = lang.Id == Model.CurrentLanguageId;
+                    <li role="option" aria-selected="@isSelected.ToString().ToLowerInvariant()" class="@(isSelected ? "selected" : null)">
+                        <a href="@Url.RouteUrl(NopRouteNames.Standard.CHANGE_LANGUAGE, new { langid = lang.Id, returnUrl }, webHelper.GetCurrentRequestProtocol())">
+                            @if (Model.UseImages)
+                            {
+                                <img alt="@lang.Name" src="@Url.Content("~/images/flags/" + lang.FlagImageFileName)" />
+                            }
+                            <span>@lang.Name</span>
+                        </a>
+                    </li>
+                }
+            </ul>
+        }
+        </div>
+    </div>
+    <script asp-location="Footer">
+        $(function () {
+            if (window.__customSelectInitialized) {
+                return;
+            }
+            window.__customSelectInitialized = true;
+
+            $(document).on('click', function (event) {
+                var $target = $(event.target);
+                $('.custom-select.active').each(function () {
+                    var $wrapper = $(this);
+                    if (!$target.closest($wrapper).length) {
+                        $wrapper.removeClass('active');
+                        $wrapper.find('.custom-select__toggle').attr('aria-expanded', 'false');
+                    }
+                });
+            });
+
+            $(document).on('click', '.custom-select__toggle', function () {
+                var $wrapper = $(this).closest('.custom-select');
+                var isActive = $wrapper.toggleClass('active').hasClass('active');
+                $(this).attr('aria-expanded', isActive ? 'true' : 'false');
+            });
+        });
+    </script>
+}

@@ -1,0 +1,6 @@
+@model Nop.Web.Framework.Models.BaseNopEntityModel
+
+@*single-product shortcut for _StockStatusList, which holds the logic and does the loading*@
+@{
+    await Html.RenderPartialAsync("_StockStatusList", new[] { Model });
+}

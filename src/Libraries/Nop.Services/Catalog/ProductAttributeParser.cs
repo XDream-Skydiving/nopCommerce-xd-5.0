@@ -194,7 +194,8 @@ public partial class ProductAttributeParser : IProductAttributeParser
                 case AttributeControlType.RadioList:
                 case AttributeControlType.ColorSquares:
                 case AttributeControlType.ImageSquares:
-                {
+                case AttributeControlType.TextSquares:
+                    {
                     var ctrlAttributes = form[controlId];
                     if (!StringValues.IsNullOrEmpty(ctrlAttributes))
                     {

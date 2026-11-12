@@ -1,0 +1,22 @@
+@model IList<ProductOverviewModel>
+@{
+    await Html.RenderPartialAsync("_StockStatusList", Model);
+    //keep out-of-stock products at the end of the list
+    var sortedProducts = Model.OrderByDescending(item => item.CustomProperties["Ledger.InStock"] == "true").ToList();
+}
+@if (sortedProducts.Count > 0)
+{
+    <div class="product-grid cross-sells">
+        <h2 class="title">
+            @T("ShoppingCart.CrossSells")
+        </h2>
+        <div class="item-grid">
+            @foreach (var product in sortedProducts)
+            {
+                <div class="item-box">
+                    @await Html.PartialAsync("_ProductBox", product)
+                </div>
+            }
+        </div>
+    </div>
+}

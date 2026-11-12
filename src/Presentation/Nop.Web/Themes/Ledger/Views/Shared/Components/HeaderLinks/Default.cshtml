@@ -1,0 +1,200 @@
+@model HeaderLinksModel
+@using Nop.Core.Domain.Customers
+@using Nop.Services.Helpers
+@inject IWebHelper webHelper
+@inject Nop.Core.Domain.Catalog.CatalogSettings catalogSettings
+@inject Nop.Services.Cms.IWidgetPluginManager widgetPluginManager
+@inject Nop.Core.IWorkContext workContext
+@inject Nop.Core.IStoreContext storeContext
+
+@{
+    //the compare link comes from the LiStock.Theme plugin: it has to be installed, enabled in "Widgets",
+    //allowed for this store and customer, and product comparison itself has to be turned on
+    var compareLinkAvailable = catalogSettings.CompareProductsEnabled
+        && await widgetPluginManager.IsPluginActiveAsync("LiStock.Theme",
+            await workContext.GetCurrentCustomerAsync(), (await storeContext.GetCurrentStoreAsync()).Id);
+}
+
+<div class="header-links">
+    <ul>
+        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.HeaderLinksBefore, additionalData = Model })
+        <li class="header-account">
+            <button type="button" class="header-account__toggle" aria-expanded="false" aria-label="@T("Account.MyAccount")"></button>
+            <div class="header-account__panel">
+                @if (Model.IsAuthenticated)
+                {
+                    <a href="@Url.RouteUrl(NopRouteNames.General.CUSTOMER_INFO)" class="ico-account">@T("Account.MyAccount")</a>
+                    <a href="@Url.RouteUrl(NopRouteNames.Standard.LOGOUT)" class="ico-logout">@T("Account.Logout")</a>
+                }
+                else
+                {
+                    var returnUrl = Context.Request.Query.TryGetValue("returnUrl", out var url) && !StringValues.IsNullOrEmpty(url)
+                        ? url.ToString()
+                        : webHelper.GetRawUrl(Context.Request);
+
+                    @if (Model.RegistrationType != UserRegistrationType.Disabled)
+                    {
+                        <a href="@Url.RouteUrl(NopRouteNames.Standard.REGISTER, new { returnUrl })" class="ico-register">@T("Account.Register")</a>
+                    }
+                    <a href="@Url.RouteUrl(NopRouteNames.General.LOGIN, new { returnUrl })" class="ico-login">@T("Account.Login")</a>
+                }
+            </div>
+        </li>
+        @if (Model.AllowPrivateMessages)
+        {
+            var unreadPrivateMessages = new string((Model.UnreadPrivateMessages ?? string.Empty).Where(char.IsDigit).ToArray());
+            <li>
+                <a href="@Url.RouteUrl(NopRouteNames.Standard.PRIVATE_MESSAGES, new { tab = "" })" class="ico-inbox">
+                    <span class="inbox-label">@T("PrivateMessages.Inbox")</span>
+                    <span class="inbox-unread">(@(string.IsNullOrEmpty(unreadPrivateMessages) ? "0" : unreadPrivateMessages))</span>
+                </a>
+            </li>
+        }
+        @if (Model.WishlistEnabled || compareLinkAvailable)
+        {
+            //the compare count is printed by the widget below; the script keeps this toggle in sync with it
+            var wishlistCompareToggleClass = Model.WishlistItems > 0
+                ? "header-wishlist-compare__toggle has-items"
+                : "header-wishlist-compare__toggle";
+            <li class="header-wishlist-compare">
+                <button type="button" class="@wishlistCompareToggleClass" aria-expanded="false" aria-label="@T("Wishlist")"></button>
+                <div class="header-wishlist-compare__panel">
+                    @if (Model.WishlistEnabled)
+                    {
+                        <a href="@Url.RouteUrl(NopRouteNames.General.WISHLIST)" class="ico-wishlist">
+                            <span class="wishlist-label">@T("Wishlist")</span>
+                            <span class="wishlist-qty">@T("Wishlist.HeaderQuantity", Model.WishlistItems)</span>
+                        </a>
+                    }
+                    @*a zone of the theme's own: only the compare link of LiStock.Theme lands here*@
+                    @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = "ledger_header_wishlist_compare", additionalData = Model })
+                </div>
+            </li>
+        }
+        @if (Model.ShoppingCartEnabled)
+        {
+            var cartCssClass = Model.ShoppingCartItems > 0 ? "ico-cart has-items" : "ico-cart";
+            <li id="topcartlink">
+                <a href="@Url.RouteUrl(NopRouteNames.General.CART)" class="@cartCssClass">
+                    <span class="cart-label">@T(NopRouteNames.General.CART)</span>
+                    <span class="cart-qty">@T("ShoppingCart.HeaderQuantity", Model.ShoppingCartItems)</span>
+                </a>
+            </li>
+        }
+        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.HeaderLinksAfter, additionalData = Model })
+    </ul>
+    @if (Model.AllowPrivateMessages && !string.IsNullOrEmpty(Model.AlertMessage))
+    {
+        //new private message notification
+        <script asp-location="Footer">
+            $(function() {
+                displayPopupNotification('@Html.Raw(JavaScriptEncoder.Default.Encode(Model.AlertMessage))', 'success', false);
+            });
+        </script>
+    }
+    @if (Model.ShoppingCartEnabled)
+    {
+        <script asp-location="Footer">
+            $(function() {
+                $('.header-links-wrapper').on({
+                    focus: function(){
+                        $('#flyout-cart').addClass('active');
+                    },
+                    focusout: function() {
+                        setTimeout(function() {
+                            if (!$('#topcartlink, #flyout-cart').find(':focus').length) {
+                                $('#flyout-cart').removeClass('active');
+                            }
+                        }, 0)
+                    },
+                    mouseenter: function() {
+                        $('#flyout-cart').addClass('active');
+                    },
+                    mouseleave: function() {
+                        $('#flyout-cart').removeClass('active');
+                    }
+                }, '#topcartlink, #flyout-cart');
+
+                var localized_data = {
+                    AjaxCartFailure: "@T("AjaxCart.Failure")"
+                };
+
+                AjaxCart.init(@Model.UsePopupNotifications.ToString().ToLowerInvariant(), '.header-links .cart-qty', '.header-links .wishlist-qty', '#flyout-cart', localized_data);
+            });
+        </script>
+    }
+    <script asp-location="Footer">
+        $(function () {
+            function extractCount(text) {
+                var match = /\d+/.exec(text || '');
+                return match ? parseInt(match[0], 10) : 0;
+            }
+
+            function compareCount() {
+                //the widget publishes the number itself, so there is nothing to parse out of the text
+                var $qty = $('.compare-products-qty').first();
+                return $qty.length ? parseInt($qty.attr('data-count'), 10) || 0 : 0;
+            }
+
+            function updateWishlistCompareIcon() {
+                var $toggle = $('.header-wishlist-compare__toggle');
+                if (!$toggle.length) {
+                    return;
+                }
+                var wishlistQty = extractCount($('.wishlist-qty').first().text());
+                var compareQty = compareCount();
+                $toggle.toggleClass('has-items', wishlistQty > 0 || compareQty > 0);
+            }
+
+            function updateCartIcon() {
+                var $cartIcon = $('#topcartlink .ico-cart');
+                if (!$cartIcon.length) {
+                    return;
+                }
+                var cartQty = extractCount($('.cart-qty').first().text());
+                $cartIcon.toggleClass('has-items', cartQty > 0);
+            }
+
+            $(document).on('click', function (event) {
+                var $target = $(event.target);
+                if (!$target.closest('.header-account').length) {
+                    $('.header-account__toggle').attr('aria-expanded', 'false');
+                    $('.header-account').removeClass('active');
+                }
+                if (!$target.closest('.header-wishlist-compare').length) {
+                    $('.header-wishlist-compare__toggle').attr('aria-expanded', 'false');
+                    $('.header-wishlist-compare').removeClass('active');
+                }
+            });
+
+            $('.header-account__toggle').on('click', function () {
+                var isActive = $('.header-account').toggleClass('active').hasClass('active');
+                $(this).attr('aria-expanded', isActive ? 'true' : 'false');
+            });
+
+            $('.header-wishlist-compare__toggle').on('click', function () {
+                var isActive = $('.header-wishlist-compare').toggleClass('active').hasClass('active');
+                $(this).attr('aria-expanded', isActive ? 'true' : 'false');
+            });
+
+            updateWishlistCompareIcon();
+            updateCartIcon();
+
+            //the compare count is refreshed by a separate request, so wait for it instead of reading a stale value
+            $(document).on('listock.compareProductsCountUpdated', updateWishlistCompareIcon);
+
+            if (typeof AjaxCart !== 'undefined' && !AjaxCart.__wishlistCompareIconPatched) {
+                AjaxCart.__wishlistCompareIconPatched = true;
+                var originalSuccessProcess = AjaxCart.success_process;
+                AjaxCart.success_process = function (response) {
+                    var result = originalSuccessProcess.call(AjaxCart, response);
+                    setTimeout(function () {
+                        updateWishlistCompareIcon();
+                        updateCartIcon();
+                    }, 0);
+                    return result;
+                };
+            }
+        });
+    </script>
+</div>
