@@ -1,0 +1,319 @@
+﻿@model PaymentInfoModel
+
+@{
+    Layout = "";
+    var billingCountry = await countryService.GetCountryByIdAsync(Model.BillingAddress?.CountryId ?? 0);
+    var billingState = await stateProvinceService.GetStateProvinceByIdAsync(Model.BillingAddress?.StateProvinceId ?? 0);
+    var languageCulture = (await workContext.GetWorkingLanguageAsync()).LanguageCulture;
+}
+
+<table class="stripe-form" id="stripe-card-details">
+    <tr class="input-tr">
+        <td class="input-title">
+            <label>
+                <span>@T("Plugin.Payments.Stripe3DSecure.Payment.CardholderName"):</span>
+            </label>
+        </td>
+        <td>
+            <input asp-for="CardholderName" autocomplete="off" class="input-field" placeholder="Jane Doe" />
+        </td>
+    </tr>
+    <tr class="input-tr">
+        <td class="input-title">
+            <label>
+                <span>@T("Plugin.Payments.Stripe3DSecure.Payment.CardNumber"):</span>
+            </label>
+        </td>
+        <td>
+            <div class="card-number">
+                <div id="card-number-element" class="input-field"></div>
+                <span class="brand"><i class="pf pf-credit-card" id="brand-icon"></i></span>
+            </div>
+        </td>
+    </tr>
+    <tr class="input-tr">
+        <td class="input-title">
+            <label>
+                <span>@T("Plugin.Payments.Stripe3DSecure.Payment.ExpirationDate"):</span>
+            </label>
+        </td>
+        <td>
+            <div id="card-expiry-element" class="input-field"></div>
+        </td>
+    </tr>
+    <tr class="input-tr">
+        <td class="input-title">
+            <label>
+                <span>@T("Plugin.Payments.Stripe3DSecure.Payment.CardCode"):</span>
+            </label>
+        </td>
+        <td>
+            <div id="card-cvc-element" class="input-field"></div>
+        </td>
+    </tr>
+</table>
+
+<!-- Used to display Element errors. -->
+<div id="stripe-card-errors" role="alert" class="payment-errors"></div>
+<input type="hidden" asp-for="CardNonce" />
+<input style="display:none;" type="hidden" name="nextstep" value="Next" id="nextstep" />
+
+<script type="text/javascript">
+
+    var onClickAttr = null;
+    var stripe;
+    var cardNumberElement;
+    var onePageCheckout = @orderSettings.OnePageCheckoutEnabled.ToString().ToLower();
+
+    function stripeInit() {
+        onClickAttr = $(".payment-info-next-step-button").attr("onClick");
+
+        //set loader
+        $('.payment-info-next-step-button').attr("disabled", true);
+        $('.payment-info .info').addClass("rotating");
+        $('.payment-info .info table.stripe-form').css("opacity", "0.3");
+
+        $.getScript("@Stripe3DSecurePaymentDefaults.StripeScriptPath", function (data, textStatus, jqxhr) {
+            GetScriptCallback();
+        });
+    }
+
+    function GetScriptCallback() {
+        if (typeof stripe == 'undefined') {
+            stripe = Stripe('@Model.PublishableApiKey', { locale:'@languageCulture' });
+        }
+
+        var elements = stripe.elements({locale:'@languageCulture'});
+        var style = {
+            base: {
+                color: '#333',
+                lineHeight: '32px',
+                fontSize: '14px',
+
+                '::placeholder': {
+                    color: '#CFD7DF',
+                },
+            },
+        };
+
+        cardNumberElement = elements.create('cardNumber', {
+            style: style
+        });
+        cardNumberElement.on('ready', function (event) {
+            // Handle ready event for remove loader
+            $('.payment-info-next-step-button').attr("disabled", false);
+            $('.payment-info .info').removeClass("rotating");
+            $('.payment-info .info table.stripe-form').css("opacity", "1");
+        });
+
+        cardNumberElement.mount('#card-number-element');
+        var cardExpiryElement = elements.create('cardExpiry', {
+            style: style
+        });
+        cardExpiryElement.mount('#card-expiry-element');
+        var cardCvcElement = elements.create('cardCvc', {
+            style: style
+        });
+        cardCvcElement.mount('#card-cvc-element');
+
+        registerElements([cardNumberElement, cardExpiryElement, cardCvcElement]);
+
+        var cardBrandToPfClass = {
+            'visa': 'pf-visa',
+            'mastercard': 'pf-mastercard',
+            'amex': 'pf-american-express',
+            'discover': 'pf-discover',
+            'diners': 'pf-diners',
+            'jcb': 'pf-jcb',
+            'unionpay': 'pf-unionpay',
+            'unknown': 'pf-credit-card',
+        }
+
+        function registerElements(elements) {
+            // Listen for errors from each Element, and show error messages in the UI.
+            var savedErrors = {};
+            elements.forEach(function(element, idx) {
+                element.on('change', function (event) {
+                    if (event.brand) {
+                        setBrandIcon(event.brand);
+                    }
+
+                    if (event.error) {
+                        savedErrors[idx] = event.error.message;
+                        var errorElement = document.getElementById('stripe-card-errors');
+                        errorElement.textContent = event.error.message;
+                    } else {
+                        savedErrors[idx] = null;
+
+                        // Loop over the saved errors and find the first one, if any.
+                        var nextError = Object.keys(savedErrors)
+                            .sort()
+                            .reduce(function(maybeFoundError, key) {
+                            return maybeFoundError || savedErrors[key];
+                            }, null);
+
+                        if (nextError) {
+                            // Now that they've fixed the current error, show another one.
+                            var errorElement = document.getElementById('stripe-card-errors');
+                            errorElement.textContent = nextError;
+                        } else {
+                            // The user fixed the last error; no more errors.
+                            var errorElement = document.getElementById('stripe-card-errors');
+                            errorElement.textContent = "";
+                        }
+                    }
+                });
+            });
+        }
+
+        function setBrandIcon(brand) {
+            var brandIconElement = document.getElementById('brand-icon');
+            var pfClass = 'pf-credit-card';
+            if (brand in cardBrandToPfClass) {
+                pfClass = cardBrandToPfClass[brand];
+            }
+            for (var i = brandIconElement.classList.length - 1; i >= 0; i--) {
+                brandIconElement.classList.remove(brandIconElement.classList[i]);
+            }
+            brandIconElement.classList.add('pf');
+            brandIconElement.classList.add(pfClass);
+        }
+
+        function stripePaymentError(event) {
+            var savedErrors = {};
+            // Inform the customer that there was an error.
+            if (event.error) {
+                savedErrors[0] = event.error.message;
+                var errorElement = document.getElementById('stripe-card-errors');
+                errorElement.textContent = event.error.message;
+            } else {
+                savedErrors[0] = null;
+
+                // Loop over the saved errors and find the first one, if any.
+                var nextError = Object.keys(savedErrors)
+                    .sort()
+                    .reduce(function(maybeFoundError, key) {
+                    return maybeFoundError || savedErrors[key];
+                    }, null);
+
+                if (nextError) {
+                    // Now that they've fixed the current error, show another one.
+                    var errorElement = document.getElementById('stripe-card-errors');
+                    errorElement.textContent = nextError;
+                } else {
+                    // The user fixed the last error; no more errors.
+                    var errorElement = document.getElementById('stripe-card-errors');
+                    errorElement.textContent = "";
+                }
+            }
+        }
+
+        function stripePaymentSucceeded(result) {
+            var errorElement = document.getElementById('stripe-card-errors');
+            // The payment has succeeded. Display a success message.
+            errorElement.textContent = "";
+            $('#@Html.IdFor(model => model.CardNonce)').val(result.paymentMethod.id);
+            var form = $(".payment-info-next-step-button").closest('form');
+            //Is onepagecheckout or not
+            if (onePageCheckout) {
+                PaymentInfo.save();
+            } else {
+                form.submit();
+            }
+            $(".payment-info-next-step-button").removeAttr("disabled");
+        }
+
+        $("input[name='paymentmethod']").unbind().click(function () {
+            $(".payment-info-next-step-button").attr("onClick", onClickAttr);
+        });
+
+        $(".payment-info-next-step-button").removeAttr("onClick");
+
+         $("#CardholderName").change(function(){
+            if (document.getElementById('CardholderName').value.trim().length == 0) {
+                var errorElement = document.getElementById('stripe-card-errors');
+                errorElement.textContent = "@T("Plugin.Payments.Stripe3DSecure.Payment.CardholderName.Required")";
+                return false;
+            }
+            else {
+                var errorElement = document.getElementById('stripe-card-errors');
+                errorElement.textContent = "";
+            }
+        });
+
+        $(".payment-info-next-step-button").unbind().click(function (event) {
+            $('.payment-info-next-step-button').attr("disabled", true);
+            var cardholderName = document.getElementById('CardholderName').value.length == 0 ? '@Model.CardholderName' : document.getElementById('CardholderName').value;
+            if (document.getElementById('CardholderName').value.trim().length == 0) {
+                var errorElement = document.getElementById('stripe-card-errors');
+                errorElement.textContent = "@T("Plugin.Payments.Stripe3DSecure.Payment.CardholderName.Required")";
+                $('.payment-info-next-step-button').attr("disabled", false);
+                return false;
+            }
+
+            stripe.createPaymentMethod({
+                type: 'card',
+                card: cardNumberElement,
+                billing_details: {
+                    name: cardholderName,
+                    @if(!Model.DisableBilling && Model.PassBillingAddress)
+                    {
+                        if (addressSettings.PhoneEnabled && !string.IsNullOrWhiteSpace(Model.BillingAddress?.PhoneNumber?.FixIllegalJavaScriptChars()))
+                        {
+                            <text>
+                                phone: '@Model.BillingAddress?.PhoneNumber?.FixIllegalJavaScriptChars()',
+                            </text>
+                        }
+                        <text>
+                            email: '@Model.BillingAddress?.Email?.FixIllegalJavaScriptChars()',
+                        </text>
+                        if(addressSettings.StreetAddressEnabled || addressSettings.CountryEnabled || addressSettings.ZipPostalCodeEnabled || addressSettings.CityEnabled)
+                        {
+                            <text>
+                                address: {
+                                    line1: '@Model.BillingAddress?.Address1?.FixIllegalJavaScriptChars()',
+                                    line2: '@Model.BillingAddress?.Address2?.FixIllegalJavaScriptChars()',
+                                    city: '@Model.BillingAddress?.City?.FixIllegalJavaScriptChars()',
+                                    @if(addressSettings.ZipPostalCodeEnabled && !string.IsNullOrWhiteSpace(Model.BillingAddress?.ZipPostalCode?.FixIllegalJavaScriptChars()))
+                                    {
+                                        <text>
+                                            postal_code: '@Model.BillingAddress?.ZipPostalCode?.FixIllegalJavaScriptChars()',
+                                        </text>
+                                    }
+                                    @if(addressSettings.CountryEnabled && !string.IsNullOrWhiteSpace(billingCountry?.TwoLetterIsoCode?.FixIllegalJavaScriptChars()))
+                                    {
+                                        <text>
+                                            country: '@billingCountry?.TwoLetterIsoCode?.FixIllegalJavaScriptChars()',
+                                            state: '@billingState?.Abbreviation?.FixIllegalJavaScriptChars()'
+                                        </text>
+                                    }
+                                }
+                            </text>
+                        }
+
+                    }
+                },
+            }).then(function(result) {
+                // Handle result.error or result.paymentMethod
+                if (result.error) {
+                    // Inform the customer that there was an error.
+                    stripePaymentError(result)
+                } else {
+                    // The payment has succeeded. Display a success message.
+                    stripePaymentSucceeded(result);
+                }
+                $(".payment-info-next-step-button").removeAttr("disabled");
+            });
+            return false;
+        });
+    };
+
+    function deferjqueryloading(method) {
+        if (window.jQuery)
+            method();
+        else
+            setTimeout(function () { deferjqueryloading(method) }, 50);
+    }
+    deferjqueryloading(stripeInit);
+
+</script>

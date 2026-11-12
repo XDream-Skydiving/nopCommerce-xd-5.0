@@ -1,0 +1,73 @@
+﻿@model ConfigurationModel
+@{
+    var plugin = pluginService.FindPluginByTypeInAssembly((this.ViewContext.ActionDescriptor as ControllerActionDescriptor).ControllerTypeInfo);
+    //friendly name
+    var friendlyName = plugin?.PluginDescriptor.FriendlyName;
+
+    var activeMenuSystemName = string.Empty;
+    var backToLocale = string.Empty;
+    var listActionMethodName = string.Empty;
+    var listControllerName = string.Empty;
+
+    if (plugin is IPaymentMethod)
+    {
+        //payment plugin
+        activeMenuSystemName = "Payment methods";
+        backToLocale = "Admin.Configuration.Payment.Methods.BackToList";
+        listActionMethodName = "PaymentMethods";
+        listControllerName = "Payment";
+    }
+
+    Layout = "_AdminLayout";
+    //page title
+    ViewBag.PageTitle = T("Plugin.Payments.Stripe3DSecure.Fields.LicenseTitle").Text + " - " + friendlyName;
+    //active menu item (system name)
+    NopHtml.SetActiveMenuItemSystemName(activeMenuSystemName);
+}
+<form asp-controller="Stripe3DSecure" asp-action="LicenseKey" method="post">
+    <div class="content-header clearfix">
+        <h1 class="float-left">
+            @T("Plugin.Payments.Stripe3DSecure.Fields.LicenseTitle") - @friendlyName
+            <small>
+                <i class="fas fa-arrow-circle-left"></i>
+                <a asp-action="@listActionMethodName" asp-controller="@listControllerName">@T(backToLocale)</a>
+            </small>
+        </h1>
+        <div class="float-right">
+            <button type="submit" name="save" class="btn bg-blue" value="save">
+                <i class="far fa-save"></i>
+                @T("Admin.Common.Save")
+            </button>
+        </div>
+    </div>
+    <section class="content">
+        <div class="container-fluid">
+            <div class="form-horizontal">
+                <div class="cards-group">
+                    <div class="card card-default">
+                        <div class="card-body">
+                            <div class="form-group row">
+                                <div class="col-md-3">
+                                    <nop-label asp-for="LicenseKey" />
+                                </div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="LicenseKey" />
+                                    <span asp-validation-for="LicenseKey"></span>
+                                </div>
+                            </div>
+                            @if (ViewBag.Warning != null)
+                            {
+                                <div class="CofigurationWarning">
+                                    <center>
+                                        <b style="color:red;">@ViewBag.Warning</b>
+                                    </center>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</form>
+

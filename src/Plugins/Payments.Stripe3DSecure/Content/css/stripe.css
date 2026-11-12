@@ -1,0 +1,186 @@
+﻿@-webkit-keyframes rotating /* Safari and Chrome */ {
+    from {
+        -webkit-transform: rotate(0deg);
+        -o-transform: rotate(0deg);
+        transform: rotate(0deg);
+    }
+
+    to {
+        -webkit-transform: rotate(360deg);
+        -o-transform: rotate(360deg);
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes rotating {
+    from {
+        -ms-transform: rotate(0deg);
+        -moz-transform: rotate(0deg);
+        -webkit-transform: rotate(0deg);
+        -o-transform: rotate(0deg);
+        transform: rotate(0deg);
+    }
+
+    to {
+        -ms-transform: rotate(360deg);
+        -moz-transform: rotate(360deg);
+        -webkit-transform: rotate(360deg);
+        -o-transform: rotate(360deg);
+        transform: rotate(360deg);
+    }
+}
+
+.payment-info .info.rotating {
+    display: inherit;
+    pointer-events: none;
+    cursor: default;
+    position: relative;
+}
+
+    .payment-info .info.rotating::before {
+        content: '\f012';
+        font: normal normal normal 14px/1 PaymentFont;
+        font-size: 40px;
+        position: absolute;
+        top: 35%;
+        left: 50%;
+        z-index: 1;
+        text-align: center;
+        vertical-align: middle;
+        -webkit-animation: rotating 2s linear infinite;
+        -moz-animation: rotating 2s linear infinite;
+        -ms-animation: rotating 2s linear infinite;
+        -o-animation: rotating 2s linear infinite;
+        animation: rotating 2s linear infinite;
+    }
+
+.payment-info .info table.stripe-form {
+    width: 100%;
+}
+
+.payment-info .info .stripe-form .input-field {
+    display: inline-block;
+    width: 100%;
+    max-width: 400px !important;
+    background-color: white;
+    border: 1px solid #ddd !important;
+    border-radius: 0 !important;
+    padding: 8px;
+    vertical-align: middle;
+    color: #333;
+    line-height: 48px !important;
+    font-weight: 400;
+    height: 48px !important;
+    margin-left: 0;
+    margin-bottom: 10px;
+}
+
+    .payment-info .info .stripe-form .input-field::-webkit-input-placeholder {
+        color: inherit;
+    }
+
+    .payment-info .info .stripe-form .input-field::-moz-placeholder {
+        color: inherit;
+    }
+
+.payment-info .info .stripe-form .card-number {
+    position: relative;
+    display: inline-block;
+    max-width: 400px;
+    width: 100%;
+}
+
+.payment-info .info .stripe-form .brand {
+    position: absolute;
+    top: 0;
+    right: 0;
+    border: 1px solid #ddd;
+    padding: 10px;
+    vertical-align: middle;
+    color: #333;
+}
+
+    .payment-info .info .stripe-form .brand i::before {
+        font-family: PaymentFont !important;
+        font-weight: 400;
+        font-size: 25px;
+    }
+
+.checkout-data .payment-errors {
+    font-size: 13px;
+    margin-bottom: 15px;
+    color: #eb1c26;
+}
+
+.checkout-data .payment-errors,
+.checkout-data .stripe-payment-success {
+    text-align: center;
+}
+
+.payment-info .info table tbody tr td {
+    float: none;
+}
+
+@media all and (max-width: 481px) {
+    .payment-info .info table tbody tr td {
+        float: left;
+        width: 100% !important;
+    }
+
+    .payment-info .info td label {
+        width: 100%;
+    }
+
+    .payment-info .info td:first-child,
+    .payment-info .info td + td {
+        text-align: inherit !important;
+    }
+
+    .payment-info .info tr:first-child td:first-child {
+        padding-top: 10px;
+    }
+
+    .payment-info .info td:last-child {
+        padding-left: 5px !important;
+    }
+
+    .payment-info .info tr:first-child td,
+    .payment-info .info tr td {
+        padding: 5px;
+    }
+
+        .payment-info .info tr:first-child td:last-child::before {
+            display: none;
+        }
+
+    .payment-info .info tr:last-child td {
+        padding-bottom: 0;
+    }
+}
+
+@media (max-width:640px) {
+    .payment-info .info .stripe-form .brand {
+        padding: 12px 5px;
+    }
+
+        .payment-info .info .stripe-form .brand i::before {
+            font-size: 21px;
+        }
+}
+
+@media all and (max-width: 769px) {
+}
+
+@media all and (max-width: 1000px) {
+}
+
+
+
+@media all and (min-width: 481px) {
+}
+
+@media all and (min-width: 769px) {
+}
+.payment-logo img {
+    max-width: 120px;
+}

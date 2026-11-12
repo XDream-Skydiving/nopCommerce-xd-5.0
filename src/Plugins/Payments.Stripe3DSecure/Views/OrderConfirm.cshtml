@@ -1,0 +1,256 @@
+﻿@model OrderConfirmModel
+
+@{
+    Layout = "";
+    var shippingCountry = await countryService.GetCountryByIdAsync(Model.ShippingAddress?.CountryId ?? 0);
+    var shippingState = await stateProvinceService.GetStateProvinceByIdAsync(Model.ShippingAddress?.StateProvinceId ?? 0);
+    var languageCulture = (await workContext.GetWorkingLanguageAsync()).LanguageCulture;
+}
+
+<!-- Used to display Element errors. -->
+<div id="stripe-confirm-errors" role="alert" class="payment-errors message-error"></div>
+<input style="display:none;" type="hidden" name="nextstep" value="Next" id="nextstep" />
+
+<script type="text/javascript">
+
+    var onClickConfirmAttr = null;
+    var stripe;
+    var onePageCheckout = @orderSettings.OnePageCheckoutEnabled.ToString().ToLower();
+
+    function stripeConfirmInit() {
+
+        onClickConfirmAttr = $(".confirm-order-next-step-button").attr("onClick");
+        $('.confirm-order-next-step-button').attr("disabled", false);
+        if (!onePageCheckout) {
+            $("#confirm-order-form .buttons").append('<div class="loader" style="margin: 5px 0 0;"><span class="please-wait" id="confirm-order-please-wait" style="display: none;background: none;"></span></div>');
+            var loader = document.getElementById('confirm-order-please-wait');
+            loader.textContent = "@T("Checkout.SubmittingOrder")";
+        }
+
+        //check js already loaded
+        if (typeof window.Stripe == 'undefined') {
+            $.getScript("@Stripe3DSecurePaymentDefaults.StripeScriptPath", function (data, textStatus, jqxhr) {
+                GetScriptConfirmCallback();
+            });
+        }
+        else {
+            GetScriptConfirmCallback();
+        }
+    }
+
+    function GetScriptConfirmCallback() {
+        if (typeof stripe == 'undefined') {
+            stripe = Stripe('@Model.PublishableApiKey', { locale:'@languageCulture' });
+        }
+
+        function stripePaymentConfirmError(event) {
+            var savedErrors = {};
+            // Inform the customer that there was an error.
+            if (event.error) {
+                savedErrors[0] = event.error.message;
+                var errorElement = document.getElementById('stripe-confirm-errors');
+                errorElement.textContent = event.error.message;
+            } else {
+                savedErrors[0] = null;
+
+                // Loop over the saved errors and find the first one, if any.
+                var nextError = Object.keys(savedErrors)
+                    .sort()
+                    .reduce(function(maybeFoundError, key) {
+                    return maybeFoundError || savedErrors[key];
+                    }, null);
+
+                if (nextError) {
+                    // Now that they've fixed the current error, show another one.
+                    var errorElement = document.getElementById('stripe-confirm-errors');
+                    errorElement.textContent = nextError;
+                } else {
+                    // The user fixed the last error; no more errors.
+                    var errorElement = document.getElementById('stripe-confirm-errors');
+                    errorElement.textContent = "";
+                }
+            }
+        }
+
+        function stripePaymentConfirmSucceeded() {
+            var errorElement = document.getElementById('stripe-confirm-errors');
+            // The payment has succeeded. Display a success message.
+            errorElement.textContent = "";
+            var form = $(".confirm-order-next-step-button").closest('form');
+            //Is onepagecheckout or not
+            if (onePageCheckout) {
+                Checkout.setLoadWaiting(false, true);
+                ConfirmOrder.save();
+            } else {
+                $('#confirm-order-please-wait').hide();
+                $("#confirm-order-form .buttons").css('opacity', '1');
+                form.submit();
+            }
+            $(".confirm-order-next-step-button").removeAttr("disabled");
+        }
+
+        function stripePaymentProcess(clientSecret) {
+            var paymentMethod = '@Model.PaymentMethodId';
+            stripe.confirmCardPayment(
+                clientSecret,  {
+                    payment_method: paymentMethod,
+                    @if(!string.IsNullOrEmpty(Model.ReceiptEmail) && Model.SentReceiptEmail)
+                    {
+                        <text>
+                            receipt_email: '@Model.ReceiptEmail?.FixIllegalJavaScriptChars()',
+                        </text>
+                    }
+                    @if (Model.IsRecurring)
+                    {
+                        <text>
+                            save_payment_method: true,
+                            setup_future_usage: 'off_session',
+                        </text>
+                    }
+                    @if(Model.IsRequiresShipping && Model.ShippingAddress != null && Model.PassShippingAddress)
+                    {
+                        <text>
+                            shipping : {
+                                name: '@Model.ShippingAddress?.FirstName?.FixIllegalJavaScriptChars() @Model.ShippingAddress?.LastName?.FixIllegalJavaScriptChars()',
+                                @if (addressSettings.PhoneEnabled && !string.IsNullOrWhiteSpace(Model.ShippingAddress?.PhoneNumber?.FixIllegalJavaScriptChars()))
+                                {
+                                    <text>
+                                        phone: '@Model.ShippingAddress?.PhoneNumber?.FixIllegalJavaScriptChars()',
+                                    </text>
+                                }
+                                @if(addressSettings.StreetAddressEnabled || addressSettings.CountryEnabled || addressSettings.ZipPostalCodeEnabled || addressSettings.CityEnabled)
+                                {
+                                    <text>
+                                        address: {
+                                            line1: '@Model.ShippingAddress?.Address1?.FixIllegalJavaScriptChars()',
+                                            line2: '@Model.ShippingAddress?.Address2?.FixIllegalJavaScriptChars()',
+                                            city: '@Model.ShippingAddress?.City?.FixIllegalJavaScriptChars()',
+                                            @if(addressSettings.ZipPostalCodeEnabled && !string.IsNullOrWhiteSpace(Model.ShippingAddress?.ZipPostalCode?.FixIllegalJavaScriptChars()))
+                                            {
+                                                <text>
+                                                    postal_code: '@Model.ShippingAddress?.ZipPostalCode?.FixIllegalJavaScriptChars()',
+                                                </text>
+                                            }
+                                            @if(addressSettings.CountryEnabled && !string.IsNullOrWhiteSpace(shippingCountry?.TwoLetterIsoCode?.FixIllegalJavaScriptChars()))
+                                            {
+                                                <text>
+                                                    country: '@shippingCountry?.TwoLetterIsoCode?.FixIllegalJavaScriptChars()',
+                                                    state: '@shippingState?.Abbreviation?.FixIllegalJavaScriptChars()'
+                                                </text>
+                                            }
+                                        }
+                                    </text>
+                                }
+                            }
+                        </text>
+                    }
+                }
+            ).then(function (result) {
+              // Handle result.error or result.paymentIntent
+                if (result.error) {
+                    // Inform the customer that there was an error.
+                    stripePaymentConfirmError(result);
+                    if (document.location.href.indexOf('onepagecheckout') > -1) {
+                            $("html, body").delay(500).animate({
+                            scrollTop: $('#opc-confirm_order').offset().top
+                        }, 1500);
+                    }
+                    if (onePageCheckout) {
+                        Checkout.setLoadWaiting(false, false);
+                    }
+                    else {
+                        $('#confirm-order-please-wait').hide();
+                        $("#confirm-order-form .buttons").css('opacity', '1');
+                    }
+                    $('.confirm-order-next-step-button').attr("disabled", true);
+                } else {
+                    // The payment has succeeded. Display a success message.
+                    stripePaymentConfirmSucceeded();
+                    $(".confirm-order-next-step-button").removeAttr("disabled");
+                }
+            });
+        }
+
+        $("input[name='paymentmethod']").unbind().click(function () {
+            $(".confirm-order-next-step-button").attr("onClick", onClickConfirmAttr);
+        });
+
+        $(".confirm-order-next-step-button").removeAttr("onClick");
+
+        $(".confirm-order-next-step-button").unbind().click(function (event) {
+            $('.confirm-order-next-step-button').attr("disabled", true);
+
+            //terms of service
+            var termOfServiceOk = true;
+            var termsofservice = $('#termsofservice');
+            if ($('#termsofservice').length === 0)
+                termsofservice = $('#terms-of-service');
+            if (termsofservice.length > 0) {
+                //terms of service element exists
+                if (!termsofservice.is(':checked')) {
+                    var readterms = $("#terms-of-service-warning-box");
+                    if (readterms.length === 0)
+                        readterms = $('#read-terms');
+                    readterms.dialog();
+                    termOfServiceOk = false;
+                } else {
+                    termOfServiceOk = true;
+                }
+            }
+
+            if (!termOfServiceOk) {
+                $(".confirm-order-next-step-button").removeAttr("disabled");
+                return false;
+            }
+
+            if (onePageCheckout) {
+                Checkout.setLoadWaiting('confirm-order');
+            }
+            else {
+                $('#confirm-order-please-wait').show();
+                $("#confirm-order-form .buttons").css('opacity', '.5');
+            }
+
+            $.ajax({
+                cache: false,
+                url: "@Html.Raw(Url.Action("ValidateConfirmOrder", "Stripe3DSecureWebhook"))",
+                type: "POST",
+                success: function (response) {
+                    if (response.error) {
+                        var errorElement = document.getElementById('stripe-confirm-errors');
+                        if ((typeof response.message) == 'string') {
+                            errorElement.textContent = response.message;
+                        } else {
+                            errorElement.textContent = response.message.join("\n");
+                        }
+                        if (onePageCheckout) {
+                            Checkout.setLoadWaiting(false, false);
+                            if (document.location.href.indexOf('onepagecheckout') > -1) {
+                                $("html, body").delay(500).animate({
+                                    scrollTop: $('#opc-confirm_order').offset().top
+                                }, 1500);
+                            }
+                        } else {
+                            $('#confirm-order-please-wait').hide();
+                            $("#confirm-order-form .buttons").css('opacity', '1');
+                        }
+                        return false;
+                    } else {
+                        stripePaymentProcess(response.clientSecret);
+                    }
+                }
+            });
+
+            return false;
+        });
+    };
+
+    function deferjqueryloading(method) {
+        if (window.jQuery)
+            method();
+        else
+            setTimeout(function () { deferjqueryloading(method) }, 50);
+    }
+    deferjqueryloading(stripeConfirmInit);
+
+</script>

@@ -1,0 +1,188 @@
+﻿@model ConfigurationModel
+@{
+    Layout = "_ConfigurePlugin";
+}
+
+@await Component.InvokeAsync(typeof(StoreScopeConfigurationViewComponent))
+
+<form asp-controller="Stripe3DSecure" asp-action="Configure" method="post">
+    <div class="cards-group">
+        <div class="card card-default">
+            <div class="card-body">
+                @Html.Raw(T("Plugin.Payments.Stripe3DSecure.Fields.Instructions").Text)
+                <div class="card card-default">
+                    <div class="card-header">
+                        @T("Plugin.Payments.Stripe3DSecure.Fields.Settings.Common.BlockTitle")
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group row">
+                            <div class="col-md-3">
+                                <nop-override-store-checkbox asp-for="TransactModeId_OverrideForStore" asp-input="TransactModeId" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                <nop-label asp-for="TransactModeValues" />
+                            </div>
+                            <div class="col-md-9">
+                                <nop-select asp-for="TransactModeId" asp-items="Model.TransactModeValues" />
+                                <span asp-validation-for="TransactModeId"></span>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-3">
+                                <nop-override-store-checkbox asp-for="AdditionalFee_OverrideForStore" asp-input="AdditionalFee" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                <nop-label asp-for="AdditionalFee" />
+                            </div>
+                            <div class="col-md-9">
+                                <nop-editor asp-for="AdditionalFee" />
+                                <span asp-validation-for="AdditionalFee"></span>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-3">
+                                <nop-override-store-checkbox asp-for="AdditionalFeePercentage_OverrideForStore" asp-input="AdditionalFeePercentage" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                <nop-label asp-for="AdditionalFeePercentage" />
+                            </div>
+                            <div class="col-md-9">
+                                <nop-editor asp-for="AdditionalFeePercentage" />
+                                <span asp-validation-for="AdditionalFeePercentage"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card card-default">
+                    <div class="card-header">
+                        @T("Plugin.Payments.Stripe3DSecure.Fields.Settings.Stripe.BlockTitle")
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group row">
+                            <div class="col-md-3">
+                                <nop-override-store-checkbox asp-for="PublishableApiKey_OverrideForStore" asp-input="PublishableApiKey" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                <nop-label asp-for="PublishableApiKey" />
+                            </div>
+                            <div class="col-md-9">
+                                <nop-editor asp-for="PublishableApiKey" />
+                                <span asp-validation-for="PublishableApiKey"></span>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-3">
+                                <nop-override-store-checkbox asp-for="SecretApiKey_OverrideForStore" asp-input="SecretApiKey" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                <nop-label asp-for="SecretApiKey" />
+                            </div>
+                            <div class="col-md-9">
+                                <nop-editor asp-for="SecretApiKey" />
+                                <span asp-validation-for="SecretApiKey"></span>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-3">
+                                <nop-override-store-checkbox asp-for="StatementDescriptor_OverrideForStore" asp-input="StatementDescriptor" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                <nop-label asp-for="StatementDescriptor" />
+                            </div>
+                            <div class="col-md-9">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <nop-editor asp-for="StatementDescriptor" />
+                                        <span asp-validation-for="StatementDescriptor"></span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="callout bg-gray-light no-margin">
+                                            @Html.Raw(T("Plugin.Payments.Stripe3DSecure.Fields.StatementDescriptor.Note", Stripe3DSecurePaymentDefaults.StatementDescriptorLength))
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-3">
+                                <nop-override-store-checkbox asp-for="SentReceiptEmail_OverrideForStore" asp-input="SentReceiptEmail" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                <nop-label asp-for="SentReceiptEmail" />
+                            </div>
+                            <div class="col-md-9">
+                                <nop-editor asp-for="SentReceiptEmail" />
+                                <span asp-validation-for="SentReceiptEmail"></span>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-3">
+                                <nop-override-store-checkbox asp-for="PassBillingAddress_OverrideForStore" asp-input="PassBillingAddress" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                <nop-label asp-for="PassBillingAddress" />
+                            </div>
+                            <div class="col-md-9">
+                                <nop-editor asp-for="PassBillingAddress" />
+                                <span asp-validation-for="PassBillingAddress"></span>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-3">
+                                <nop-override-store-checkbox asp-for="PassShippingAddress_OverrideForStore" asp-input="PassShippingAddress" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                <nop-label asp-for="PassShippingAddress" />
+                            </div>
+                            <div class="col-md-9">
+                                <nop-editor asp-for="PassShippingAddress" />
+                                <span asp-validation-for="PassShippingAddress"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card card-default">
+                    <div class="card-header">
+                        @T("Plugin.Payments.Stripe3DSecure.Fields.Settings.StripeWebhook.BlockTitle")
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group row">
+                            <div class="col-md-3">
+                                <nop-label asp-for="WebhookUrl" />
+                            </div>
+                            <div class="col-md-9">
+                                <input class="form-control text-box single-line" id="StoreUrl" name="StoreUrl" value="@Model.WebhookUrl" type="text" readonly="readonly">
+                                <span asp-validation-for="WebhookUrl"></span>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-3">
+                                <nop-label asp-for="WebhookId" />
+                            </div>
+                            <div class="col-md-9">
+                                <div class="input-group">
+                                    <input class="form-control text-box single-line" id="WebhookId" name="WebhookId" value="@Model.WebhookId" type="text" readonly="readonly">
+                                    @if (!webHelper.IsLocalRequest(this.Context.Request))
+                                    {
+                                        <div class="input-group-btn">
+                                            @if (string.IsNullOrWhiteSpace(Model.WebhookId))
+                                            {
+                                                <button type="submit" name="createwebhook" class="btn btn-info">
+                                                    @T("Plugin.Payments.Stripe3DSecure.Fields.WebhookCreate")
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <button type="submit" name="removewebhook" class="btn btn-info">
+                                                    @T("Plugin.Payments.Stripe3DSecure.Fields.WebhookRemove")
+                                                </button>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                                <span asp-validation-for="WebhookId"></span>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-3">
+                                <nop-override-store-checkbox asp-for="SigningSecretKey_OverrideForStore" asp-input="SigningSecretKey" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                <nop-label asp-for="SigningSecretKey" />
+                            </div>
+                            <div class="col-md-9">
+                                <nop-editor asp-for="SigningSecretKey" />
+                                <span asp-validation-for="SigningSecretKey"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-9 offset-md-3">
+                        <button type="submit" name="save" class="btn btn-primary">@T("Admin.Common.Save")</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>

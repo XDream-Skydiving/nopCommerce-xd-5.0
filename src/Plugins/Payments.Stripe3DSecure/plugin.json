@@ -1,0 +1,16 @@
+﻿{
+  "Group": "Payment methods",
+  "FriendlyName": "Card Payment",
+  "SupportedVersions": [
+    "5.00"
+  ],
+  "Author": "nopCommercePlus(Forefront Infotech)",
+  "DisplayOrder": 1,
+  "FileName": "Nop.Plugin.Payments.Stripe3DSecure.dll",
+  "Description": "This plugin enables credit/debit cards payment with stripe.",
+  "LimitedToStores": [],
+  "LimitedToCustomerRoles": [],
+  "DependsOnSystemNames": [],
+  "SystemName": "Payments.Stripe3DSecure",
+  "Version": "1.1"
+}
