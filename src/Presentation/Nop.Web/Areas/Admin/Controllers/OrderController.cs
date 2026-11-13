@@ -227,6 +227,16 @@ public partial class OrderController : BaseAdminController
 
     [HttpPost]
     [CheckPermission(StandardPermission.Orders.ORDERS_VIEW)]
+    public virtual async Task<IActionResult> LatestOrders(OrderSearchModel searchModel)
+    {
+        searchModel.OrderStatusIds = [(int)OrderStatus.Pending, (int)OrderStatus.Processing];
+        var model = await _orderModelFactory.PrepareOrderListModelAsync(searchModel);
+
+        return Json(model);
+    }
+
+    [HttpPost]
+    [CheckPermission(StandardPermission.Orders.ORDERS_VIEW)]
     public virtual async Task<IActionResult> ReportAggregates(OrderSearchModel searchModel)
     {
         //prepare model
@@ -1189,6 +1199,44 @@ public partial class OrderController : BaseAdminController
         await LogEditOrderAsync(order.Id);
 
         return RedirectToAction("Edit", new { id = order.Id });
+    }
+
+    //XD Update
+    [HttpPost, ActionName("Edit")]
+    [FormValueRequired("save-admin-comment")]
+    [CheckPermission(StandardPermission.Orders.ORDERS_CREATE_EDIT_DELETE)]
+    public virtual async Task<IActionResult> EditAdminComment(int id, OrderModel model)
+    {
+        //try to get an order with the specified id
+        var order = await _orderService.GetOrderByIdAsync(id);
+        if (order == null)
+            return RedirectToAction("List");
+
+        //a vendor does not have access to this functionality
+        if (await _workContext.GetCurrentVendorAsync() != null)
+            return RedirectToAction("Edit", "Order", new { id });
+
+        order.AdminComment = model.AdminComment;
+        await _orderService.UpdateOrderAsync(order);
+
+        //add a note
+        await _orderService.InsertOrderNoteAsync(new OrderNote
+        {
+            OrderId = order.Id,
+            Note = "Admin comments have been updated. Previous comment: " + order.AdminComment,
+            DisplayToCustomer = false,
+            CreatedOnUtc = DateTime.UtcNow
+        });
+
+        await LogEditOrderAsync(order.Id);
+
+        //prepare model
+        model = await _orderModelFactory.PrepareOrderModelAsync(model, order);
+
+        //selected card
+        SaveSelectedCardName("order-info", persistForTheNextRequest: false);
+
+        return View(model);
     }
 
     [HttpPost, ActionName("Edit")]

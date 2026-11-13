@@ -890,6 +890,10 @@ public partial class OrderModelFactory : IOrderModelFactory
         catch { }
         searchModel.LicenseCheckModel = licenseCheckModel;
 
+        //XD update
+        if (!searchModel.IsLoggedInAsVendor && !(searchModel.OrderStatusIds?.Any() ?? false))
+            searchModel.OrderStatusIds = [(int)OrderStatus.Pending, (int)OrderStatus.Processing];
+
         //prepare available order, payment and shipping statuses
         await _baseAdminModelFactory.PrepareOrderStatusesAsync(searchModel.AvailableOrderStatuses);
         if (searchModel.AvailableOrderStatuses.Any())
@@ -1023,7 +1027,8 @@ public partial class OrderModelFactory : IOrderModelFactory
                     CustomerEmail = billingAddress.Email,
                     CustomerFullName = $"{billingAddress.FirstName} {billingAddress.LastName}",
                     CustomerId = order.CustomerId,
-                    CustomOrderNumber = order.CustomOrderNumber
+                    CustomOrderNumber = order.CustomOrderNumber,
+                    AdminComment = order.AdminComment //XD update
                 };
 
                 //convert dates to the user time
@@ -1144,7 +1149,8 @@ public partial class OrderModelFactory : IOrderModelFactory
                 Id = order.Id,
                 OrderStatusId = order.OrderStatusId,
                 VatNumber = order.VatNumber,
-                CheckoutAttributeInfo = order.CheckoutAttributeDescription
+                CheckoutAttributeInfo = order.CheckoutAttributeDescription,
+                AdminComment = order.AdminComment //XD Update
             };
 
             var customer = await _customerService.GetCustomerByIdAsync(order.CustomerId);

@@ -1,4 +1,6 @@
-﻿namespace Nop.Web.Framework.Models.DataTables;
+﻿using Org.BouncyCastle.Bcpg.OpenPgp;
+
+namespace Nop.Web.Framework.Models.DataTables;
 
 /// <summary>
 /// Represents date render for DataTables column
@@ -17,10 +19,11 @@ public partial class RenderDate : IRender
 
     #region Ctor
 
-    public RenderDate()
+    public RenderDate(string? format = DEFAULT_DATE_FORMAT)
     {
         //set default values
         Format = DEFAULT_DATE_FORMAT;
+        Format = format; //XD update
     }
 
     #endregion

@@ -217,16 +217,11 @@ public partial class HomeModelFactory : IHomeModelFactory
         ArgumentNullException.ThrowIfNull(model);
 
         model.Name = "orders-grid";
-        model.UrlRead = new DataUrl("OrderList", "Order", null);
+        model.UrlRead = new DataUrl("LatestOrders", "Order", null);
         model.Length = 5;
         model.RefreshButton = false;        
         model.ColumnCollection = new List<ColumnProperty>
         {
-            new(nameof(OrderModel.CustomOrderNumber))
-            {
-                Title = await _localizationService.GetResourceAsync("Admin.Orders.Fields.CustomOrderNumber"),
-                Width = "80"
-            },
             new(nameof(OrderModel.OrderStatus))
             {
                 Title = await _localizationService.GetResourceAsync("Admin.Orders.Fields.OrderStatus"),
@@ -245,12 +240,17 @@ public partial class HomeModelFactory : IHomeModelFactory
                 Width = "100",
                 Render = new RenderDate()
             },
+            new(nameof(OrderModel.OrderTotal))
+            {
+                Title = await _localizationService.GetResourceAsync("Admin.Orders.Fields.OrderTotal"),
+                Width = "100"
+            },
             new(nameof(OrderModel.Id))
             {
-                Title = await _localizationService.GetResourceAsync("Admin.Common.View"),
+                Title = await _localizationService.GetResourceAsync("Admin.Orders.Fields.CustomOrderNumber"),
                 Width = "50",
                 ClassName = NopColumnClassDefaults.Button,
-                Render = new RenderButtonView(new DataUrl("~/Admin/Order/Edit/"))
+                Render = new RenderCustom("renderLatestOrderNumber")
             }
         };
 

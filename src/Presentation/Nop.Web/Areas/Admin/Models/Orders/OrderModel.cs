@@ -227,6 +227,10 @@ public partial record OrderModel : BaseNopEntityModel
 
     public OrderNoteSearchModel OrderNoteSearchModel { get; set; }
 
+    //xd update
+    [NopResourceDisplayName("Admin.Orders.Fields.AdminComment")]
+    public string AdminComment { get; set; }
+
     #endregion
 
     #region Nested Classes

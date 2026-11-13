@@ -263,10 +263,18 @@ public partial class Order : BaseEntity, ISoftDeletedEntity
     /// </summary>
     public int? LastPendingOrderFollowUpNumber { get; set; }
 
+    //XD Update
+    /// <summary>
+    /// Gets or sets the admin comment
+    /// </summary>
+    public string AdminComment { get; set; }
+
     /// <summary>
     /// Gets or sets the date and time (UTC) when the last follow-up for the pending order was sent
     /// </summary>
     public DateTime? LastPendingOrderFollowUpDateUtc { get; set; }
+
+
 
     #endregion
 

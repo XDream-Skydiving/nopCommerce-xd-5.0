@@ -10,7 +10,24 @@
         $(function() {
             toggleChangeOrderStatus(false);
             toggleOrderTotals(false);
+            toggleAdminComment(false);
         });
+
+        function toggleAdminComment(editmode) {
+            if (editmode) {
+                $('#btnCancelAdminComment').showElement();
+                $('#btnEditAdminComment').hideElement();
+                $('#lblAdminComment').hideElement();
+                $('#divAdminComment').showElement();
+                $('#btnSaveAdminComment').showElement();
+            } else {
+                $('#btnCancelAdminComment').hideElement();
+                $('#btnEditAdminComment').showElement();
+                $('#lblAdminComment').showElement();
+                $('#divAdminComment').hideElement();
+                $('#btnSaveAdminComment').hideElement();
+            }
+        }
 
         function toggleChangeOrderStatus(editmode) {
             if (editmode) {
@@ -66,6 +83,39 @@
             </div>
             @if (!Model.IsLoggedInAsVendor)
             {
+
+                @* XD Update*@
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <nop-label asp-for="AdminComment" />
+                    </div>
+                    <div class="col-md-9">
+
+                        <div class="input-group input-group-short">
+                            <div id="lblAdminComment" class="input-group-text">
+                                @Model.AdminComment
+                            </div>
+                            <div id="divAdminComment">
+                                <nop-editor asp-for="AdminComment" />
+                            </div>
+                            <span class="input-group-append">
+                                <button type="submit" name="btnEditAdminComment" onclick="toggleAdminComment(true);return false;" id="btnEditAdminComment" class="btn btn-primary">
+                                    @T("Admin.Common.Edit")
+                                </button>
+
+                                <button type="submit" id="btnSaveAdminComment" name="save-admin-comment" class="btn btn-primary">
+                                    @T("Admin.Common.Save")
+                                </button>
+
+                                <button type="submit" name="btnCancelAdminComment" onclick="toggleAdminComment(false);return false;" id="btnCancelAdminComment" class="btn btn-secondary">
+                                    @T("Admin.Common.Cancel")
+                                </button>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                @* XD Update end*@
+
                 <div class="form-group row">
                     <div class="col-md-3">
                         <nop-label asp-for="OrderStatus" />

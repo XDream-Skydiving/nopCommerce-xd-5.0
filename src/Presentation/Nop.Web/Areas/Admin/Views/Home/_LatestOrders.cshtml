@@ -43,6 +43,12 @@
     <div class="card-body">
         <div id="latestOrdersReport"></div>
         <script asp-location="Footer">
+            function renderLatestOrderNumber(data, type, row, meta) {
+                var textRenderer = $.fn.dataTable.render.text().display;
+                var link = '@Url.Content("~/Admin/Order/Edit/")' + encodeURIComponent(data);
+                return '<a class="btn btn-default" href="' + link + '"><i class="far fa-eye"></i>' + textRenderer(row.CustomOrderNumber) + '</a>';
+            }
+
             function renderColumnCustomerEmail(data, type, row, meta) {
                 var textRenderer = $.fn.dataTable.render.text().display;
                 return textRenderer(row.CustomerFullName) + ' (' + textRenderer(row.CustomerEmail) + ')';
