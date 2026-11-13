@@ -53,6 +53,11 @@ public partial class Category : BaseEntity, ILocalizedEntity, ISlugSupported, IA
     public int PictureId { get; set; }
 
     /// <summary>
+    /// Gets or sets the bannerpicture identifier XD Update
+    /// </summary>
+    public int BannerPictureId { get; set; }
+
+    /// <summary>
     /// Gets or sets the page size
     /// </summary>
     public int PageSize { get; set; }

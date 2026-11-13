@@ -8,6 +8,7 @@
     @await Component.InvokeAsync(typeof(AdminHeaderLinksViewComponent))
 
     @{ await Html.RenderPartialAsync("_Header"); }
+    @await RenderSectionAsync("SubHeaderBanner", false)
     <main class="master-wrapper-content" id="main">
         @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.ContentBefore })
 

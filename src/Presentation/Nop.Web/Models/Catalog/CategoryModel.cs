@@ -24,6 +24,8 @@ public partial record CategoryModel : BaseNopEntityModel, IMetaTagsSupportedMode
 
     public PictureModel PictureModel { get; set; }
 
+    public PictureModel BannerPictureModel { get; set; } //XD Update: 
+
     public bool DisplayCategoryBreadcrumb { get; set; }
     public IList<CategoryModel> CategoryBreadcrumb { get; set; }
 

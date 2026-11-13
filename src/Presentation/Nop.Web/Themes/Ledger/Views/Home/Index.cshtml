@@ -1,0 +1,80 @@
+@using Nop.Services.Localization
+@using Nop.Core
+@inject ILocalizationService localizationService
+@inject IStoreContext storeContext
+
+@{
+    Layout = "_ColumnsOne";
+
+    var homepageTitle = await localizationService.GetLocalizedAsync(await storeContext.GetCurrentStoreAsync(), s => s.HomepageTitle);
+
+    //title
+    if (!string.IsNullOrEmpty(homepageTitle))
+    {
+        NopHtml.AddTitleParts(homepageTitle);
+    }
+
+    var homepageDescription = await localizationService.GetLocalizedAsync(await storeContext.GetCurrentStoreAsync(), s => s.HomepageDescription);
+
+    //meta
+    if (!string.IsNullOrEmpty(homepageDescription))
+    {
+        NopHtml.AddMetaDescriptionParts(homepageDescription);
+    }
+
+    //page class
+    NopHtml.AppendPageCssClassParts("html-home-page");
+}
+<div class="page home-page">
+    <div class="page-body">
+        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.HomepageTop })  
+        
+        @section SubHeaderBanner
+        {
+            <div class="sub-header-banner">
+                <div class="master-wrapper-content">
+                    <div class="master-column-wrapper">
+                        <div class="imageOverlay">
+                            @await Component.InvokeAsync("TopicBlock", new { systemName = "HomePageText" })
+
+                            <div class="home-icons">
+                                @* <a href="/environment" title="Environment">
+                                    <img src="/Themes/XDream/Content/images/HomeIcons/Recycle.png" alt="Recycling Icon" />
+                                </a> *@
+
+                                <a href="/find-us" title="Find Us">
+                                    <img src="/Themes/Ledger/Content/images/HomeIcons/Find.png" alt="Find Us Icon" />
+                                </a>
+
+                                <a href="/about-us" title="Meet The Team">
+                                    <img src="/Themes/Ledger/Content/images/HomeIcons/Team.png" alt="Team Icon" />
+                                </a>
+
+                                <a href="/contactus" title="Contact Us">
+                                    <img src="/Themes/Ledger/Content/images/HomeIcons/Contact.png" alt="Contact Icon" />
+                                </a>
+
+                                <a href="https://www.facebook.com/XDREAMSPORTS" target="_blank" title="Follow Us">
+                                    <img src="/Themes/Ledger/Content/images/HomeIcons/Facebook.png" alt="Facebook Logo" />
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @* @await Component.InvokeAsync(typeof(TopicBlockViewComponent), new { systemName = "HomepageText" }) *@
+        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.HomepageBeforeCategories })
+        @await Component.InvokeAsync(typeof(HomepageCategoriesViewComponent))
+
+        @await Component.InvokeAsync("TopicBlock", new { systemName = "HomePageTextBottom" })
+
+        @await Component.InvokeAsync(typeof(FilterLevelValueSearchViewComponent))
+        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.HomepageBeforeProducts })
+        @await Component.InvokeAsync(typeof(HomepageProductsViewComponent))
+        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.HomepageBeforeBestSellers })
+        @await Component.InvokeAsync(typeof(HomepageBestSellersViewComponent))
+        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.HomepageBottom })
+    </div>
+</div>

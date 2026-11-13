@@ -163,8 +163,24 @@ public static partial class NopModelCacheDefaults
     /// {5} : current store ID
     /// </remarks>
     public static CacheKey CategoryPictureModelKey => new("Nop.pres.category.picture-{0}-{1}-{2}-{3}-{4}-{5}");
+
+    /// <summary>
+    /// Key for category banner picture caching
+    /// </summary>
+    /// <remarks>
+    /// {0} : category id
+    /// {1} : picture size
+    /// {2} : value indicating whether a default picture is displayed in case if no real picture exists
+    /// {3} : language ID ("alt" and "title" depend on localized category name)
+    /// {4} : is connection SSL secured?
+    /// {5} : current store ID
+    /// </remarks>
+    public static CacheKey CategoryBannerPictureModelKey => new("Nop.pres.category.picturebanner-{0}-{1}-{2}-{3}-{4}-{5}");
+
     public static string CategoryPicturePrefixCacheKey => "Nop.pres.category.picture";
     public static string CategoryPicturePrefixCacheKeyById => "Nop.pres.category.picture-{0}-";
+    public static string CategoryBannerPicturePrefixCacheKey => "Nop.pres.category.picturebanner";
+    public static string CategoryBannerPicturePrefixCacheKeyById => "Nop.pres.category.picturebanner-{0}-";
 
     /// <summary>
     /// Cache key for category list of the search box

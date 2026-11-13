@@ -171,7 +171,7 @@
                 {
                     <section class="product-collateral">
                         @await Html.PartialAsync("_ProductSpecifications", Model.ProductSpecificationModel)
-                        @await Html.PartialAsync("_ProductTags", Model.ProductTags)
+                        @* @await Html.PartialAsync("_ProductTags", Model.ProductTags) *@
                     </section>
                 }
                 @await Component.InvokeAsync(typeof(ProductsAlsoPurchasedViewComponent), new { productId = Model.Id })

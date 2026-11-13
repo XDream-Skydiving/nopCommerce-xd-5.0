@@ -583,6 +583,32 @@ public partial class CatalogModelFactory : ICatalogModelFactory
             }
         }
 
+        //XD Update: Add banner category image
+        const int bannerPictureSize = 876;
+        var store = await _storeContext.GetCurrentStoreAsync();
+        var language = await _workContext.GetWorkingLanguageAsync();
+        var categoryBannerPictureCacheKey = _staticCacheManager.PrepareKeyForDefaultCache(
+            NopModelCacheDefaults.CategoryBannerPictureModelKey, category, bannerPictureSize, false, language,
+            _webHelper.IsCurrentConnectionSecured(), store);
+
+        model.BannerPictureModel = await _staticCacheManager.GetAsync(categoryBannerPictureCacheKey, async () =>
+        {
+            var bannerPicture = await _pictureService.GetPictureByIdAsync(category.BannerPictureId);
+            string bannerImageUrl;
+            (bannerImageUrl, _) = await _pictureService.GetPictureUrlAsync(bannerPicture, bannerPictureSize, false);
+            var localizedName = await _localizationService.GetLocalizedAsync(category, x => x.Name);
+
+            return new PictureModel
+            {
+                FullSizeImageUrl = bannerImageUrl,
+                ImageUrl = bannerImageUrl,
+                Title = string.Format(await _localizationService.GetResourceAsync("Media.Category.ImageLinkTitleFormat"), localizedName),
+                AlternateText = string.Format(await _localizationService.GetResourceAsync("Media.Category.ImageAlternateTextFormat"), localizedName)
+            };
+        });
+
+        //XD Update End:
+
         //subcategories
         model.SubCategories = await (await _categoryService.GetAllCategoriesByParentCategoryIdAsync(category.Id))
             .SelectAwait(async curCategory =>

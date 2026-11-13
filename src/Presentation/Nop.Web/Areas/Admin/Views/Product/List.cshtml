@@ -248,10 +248,10 @@
                                       {
                                           Title = T("Admin.Catalog.Products.Fields.Name").Text
                                       },
-                                      new ColumnProperty(nameof(ProductModel.Sku))
-                                      {
-                                          Title = T("Admin.Catalog.Products.Fields.Sku").Text
-                                      },
+                                      // new ColumnProperty(nameof(ProductModel.Sku))
+                                      // {
+                                      //     Title = T("Admin.Catalog.Products.Fields.Sku").Text
+                                      // },
                                       new ColumnProperty(nameof(ProductModel.FormattedPrice))
                                       {
                                           Title = T("Admin.Catalog.Products.Fields.Price").Text
@@ -263,9 +263,16 @@
                                       new ColumnProperty(nameof(ProductModel.Published))
                                       {
                                           Title = T("Admin.Catalog.Products.Fields.Published").Text,
-                                          Width = "100",
+                                          Width = "75",
                                           ClassName = NopColumnClassDefaults.CenterAll,
                                           Render = new RenderBoolean()
+                                      },
+                                      new ColumnProperty(nameof(ProductModel.DisableBuyButton))
+                                      {
+                                          Title = "Buy Button Enabled",
+                                          Width = "80",
+                                          ClassName = NopColumnClassDefaults.CenterAll,
+                                          Render = new RenderCustom("renderColumnBuyButton")
                                       },
                                       new ColumnProperty(nameof(ProductModel.Id))
                                       {
@@ -277,7 +284,13 @@
                                   }
                          })
 
-                              <script>                           
+                              <script>        
+                                  
+                                    function renderColumnBuyButton(data, type, row, meta) {
+                                        var className = (row.DisableBuyButton ? 'fa-times ' : 'fa-check ');
+                                        return "<i class='fas " + className + !row.DisableBuyButton + "-icon' nop-value='" + !row.DisableBuyButton + "'></i>";
+                                        //return !row.DisableBuyButton;
+                                    }
 
                             $(function() {
                                 $('#delete-selected-action-confirmation-submit-button').on('click', function () {
