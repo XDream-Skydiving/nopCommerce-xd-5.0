@@ -1,15 +1,30 @@
 @model ProductDetailsModel
+@using Nop.Core.Domain.Catalog
+@inject CatalogSettings catalogSettings
 @{
-    var inStock = ViewData["InStock"] as bool? ?? Model.InStock;
+    var checkAttributes = Model.ManageInventoryMethod == ManageInventoryMethod.ManageStockByAttributes &&
+        Model.ProductAttributes.Count > 0 && catalogSettings.AjaxProcessAttributeChange;
+    var stockCssClass = checkAttributes ? string.Empty : Model.StockAvailabilityCssClass;
 }
 @if (!string.IsNullOrWhiteSpace(Model.StockAvailability) || Model.DisplayBackInStockSubscription)
 {
     <div class="availability">
         @if (!string.IsNullOrWhiteSpace(Model.StockAvailability))
         {
-            <div class="stock @(!inStock ? "out-of-stock" : null)">
+            <div class="stock @stockCssClass">
                 <span class="label">@T("Products.Availability"):</span>
-                <span class="value" id="stock-availability-value-@Model.Id">@Model.StockAvailability</span>
+
+                @*XD Update - show loading if attributes (will be overwritten by JS)*@
+                @if (checkAttributes)
+                {
+                    <span class="value @stockCssClass" id="stock-availability-value-@Model.Id">
+                        @T("products.availability.checking")
+                    </span>
+                }
+                else
+                {
+                    <span class="value @Model.StockAvailabilityCssClass" id="stock-availability-value-@Model.Id">@Model.StockAvailability</span>
+                }
             </div>
         }
         @await Html.PartialAsync("_BackInStockSubscription", Model)

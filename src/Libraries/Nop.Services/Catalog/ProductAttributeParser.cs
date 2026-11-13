@@ -799,8 +799,9 @@ public partial class ProductAttributeParser : IProductAttributeParser
     public virtual async Task<IList<string>> GenerateAllCombinationsAsync(Product product, bool ignoreNonCombinableAttributes = false, IList<int> allowedAttributeIds = null)
     {
         ArgumentNullException.ThrowIfNull(product);
-
+            
         var allProductAttributeMappings = await _productAttributeService.GetProductAttributeMappingsByProductIdAsync(product.Id);
+        allProductAttributeMappings = allProductAttributeMappings.OrderBy(am => am.DisplayOrder).ToList(); //XD Update: order by display order to ensure consistent combinations
 
         if (ignoreNonCombinableAttributes)
             allProductAttributeMappings = allProductAttributeMappings.Where(x => !x.IsNonCombinable()).ToList();

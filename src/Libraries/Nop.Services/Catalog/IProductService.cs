@@ -895,6 +895,7 @@ public partial interface IProductService
     /// <param name="product3dObject">The 3D object</param>
     /// <returns>A task that represents the asynchronous operation</returns>
     Task UpdateProduct3dObjectAsync(Product3dObject product3dObject);
+    Task<string> GetStockCssClass(Product product, string attributeXml); //XD Update
 
     #endregion
 }

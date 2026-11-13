@@ -230,7 +230,7 @@ public partial class ProductService : IProductService
     }
 
     /// <summary>
-    /// Get stock message for a product with attributes
+    /// Get stock message for a product with attributes - XD Update Version
     /// </summary>
     /// <param name="product">Product</param>
     /// <param name="attributesXml">Attributes in XML format</param>
@@ -238,59 +238,71 @@ public partial class ProductService : IProductService
     /// A task that represents the asynchronous operation
     /// The task result contains the message
     /// </returns>
+    /// Task<string> IProductService.GetStockMessageForAttributesAsync(Product product, string attributesXml)
     protected virtual async Task<string> GetStockMessageForAttributesAsync(Product product, string attributesXml)
     {
+
         if (!product.DisplayStockAvailability)
             return string.Empty;
 
+        //XD Update
+        var customer = await _workContext.GetCurrentCustomerAsync();
+        var userIsReseller = _customerService.IsInCustomerRoleAsync(customer, "subdealers").Result;
+
         string stockMessage;
+
+        //XD Update
+        string deliveryDateString;
 
         var combination = await _productAttributeParser.FindProductAttributeCombinationAsync(product, attributesXml);
         if (combination != null)
         {
-            //combination exists
+            //combination exists = in stock
             var stockQuantity = combination.StockQuantity;
             if (stockQuantity > 0)
             {
-                if (product.MinStockQuantity >= stockQuantity && product.LowStockActivity == LowStockActivity.Nothing)
-                {
-                    stockMessage = product.DisplayStockQuantity
-                        ?
-                        //display "low stock" with stock quantity
-                        string.Format(await _localizationService.GetResourceAsync("Products.Availability.LowStockWithQuantity"), stockQuantity)
-                        :
-                        //display "low stock" without stock quantity
-                        await _localizationService.GetResourceAsync("Products.Availability.LowStock");
-                }
-                else
-                {
-                    stockMessage = product.DisplayStockQuantity
-                        ?
-                        //display "in stock" with stock quantity
-                        string.Format(await _localizationService.GetResourceAsync("Products.Availability.InStockWithQuantity"), stockQuantity)
-                        :
-                        //display "in stock" without stock quantity
-                        await _localizationService.GetResourceAsync("Products.Availability.InStock");
-                }
+                //delivery date
+                var deliveryDate = await _dateRangeService.GetDeliveryDateByIdAsync(product.DeliveryDateId);
+                deliveryDateString = (deliveryDate == null)
+                    ? ""
+                    : await _localizationService.GetLocalizedAsync(deliveryDate, dd => dd.Name);
+
+                stockMessage = (product.DisplayStockQuantity || userIsReseller) //XD Update
+                    ?
+                    //display "in stock" with stock quantity
+                    string.Format(await _localizationService.GetResourceAsync("Products.Availability.InStockWithQuantity"), stockQuantity, deliveryDateString)
+                    :
+                    //display "in stock" without stock quantity
+                    string.Format(await _localizationService.GetResourceAsync("Products.Availability.InStock"), deliveryDateString);
             }
+            //combination doesn't exist, but we allow out of stock = backorder
+            else if (combination.AllowOutOfStockOrders)
+            {
+                //If we allow out of stock orders, show backorder Availability range or delivery date
+                var productAvailabilityRange = await
+                    _dateRangeService.GetProductAvailabilityRangeByIdAsync(product.ProductAvailabilityRangeId);
+
+                stockMessage = productAvailabilityRange == null
+                        ? await _localizationService.GetResourceAsync("Products.Availability.Backordering")
+                        : string.Format(await _localizationService.GetResourceAsync("Products.Availability.BackorderingWithDate"),
+                            await _localizationService.GetLocalizedAsync(productAvailabilityRange, range => range.Name));
+            }
+            //combination doesn't exist and we don't allow backorders = out of stock
             else
             {
-                if (combination.AllowOutOfStockOrders)
-                    stockMessage = await _localizationService.GetResourceAsync("Products.Availability.InStock");
-                else
-                {
-                    var productAvailabilityRange = await
-                        _dateRangeService.GetProductAvailabilityRangeByIdAsync(product.ProductAvailabilityRangeId);
-                    stockMessage = productAvailabilityRange == null
-                        ? await _localizationService.GetResourceAsync("Products.Availability.OutOfStock")
-                        : string.Format(await _localizationService.GetResourceAsync("Products.Availability.AvailabilityRange"),
-                            await _localizationService.GetLocalizedAsync(productAvailabilityRange, range => range.Name));
-                }
+                //XD Update: Only show availability range if target stock is also > 0
+                var productAvailabilityRange = await
+                    _dateRangeService.GetProductAvailabilityRangeByIdAsync(product.ProductAvailabilityRangeId);
+                stockMessage = (productAvailabilityRange == null || combination.NotifyAdminForQuantityBelow == 0)
+                    ? await _localizationService.GetResourceAsync("Products.Availability.OutOfStock")
+                    : string.Format(await _localizationService.GetResourceAsync("Products.Availability.AvailabilityRange"),
+                        await _localizationService.GetLocalizedAsync(productAvailabilityRange, range => range.Name));
             }
         }
+        //no combination configured
         else
         {
-            //no combination configured
+            //no combination but we allow this = backorder
             if (product.AllowAddingOnlyExistingAttributeCombinations)
             {
                 var allIds = (await _productAttributeService.GetProductAttributeMappingsByProductIdAsync(product.Id)).Where(pa => pa.IsRequired).Select(pa => pa.Id).ToList();
@@ -298,8 +310,14 @@ public partial class ProductService : IProductService
 
                 var selectedIds = allIds.Intersect(exIds).ToList();
 
-                if (selectedIds.Count != allIds.Count)
-                {
+                //allIds = attributes that are supposed to be selected
+                //selectedIds = attributes where the user has made a selection (or is already selected)
+                //if not all required are selected, tell the user to select all
+
+                if (selectedIds.Count() < allIds.Count)
+                    return await _localizationService.GetResourceAsync("Products.Availability.SelectRequiredAttributes");
+
+                if (selectedIds.Count() != allIds.Count)
                     if (_catalogSettings.AttributeValueOutOfStockDisplayType == AttributeValueOutOfStockDisplayType.AlwaysDisplay)
                         return await _localizationService.GetResourceAsync("Products.Availability.SelectRequiredAttributes");
                     else
@@ -315,24 +333,137 @@ public partial class ProductService : IProductService
                         if (flag)
                             return await _localizationService.GetResourceAsync("Products.Availability.SelectRequiredAttributes");
                     }
-                }
 
                 var productAvailabilityRange = await
                     _dateRangeService.GetProductAvailabilityRangeByIdAsync(product.ProductAvailabilityRangeId);
                 stockMessage = productAvailabilityRange == null
+                        ? await _localizationService.GetResourceAsync("Products.Availability.Backordering")
+                        : string.Format(await _localizationService.GetResourceAsync("Products.Availability.BackorderingWithDate"),
+                            await _localizationService.GetLocalizedAsync(productAvailabilityRange, range => range.Name));
+            }
+            //no combination and we don't allow this = out of stock
+            else
+            {              
+                //If we allow non existing combinations, we don't have stock, so show backorder Availability range or delivery date
+                var productAvailabilityRange = await
+                    _dateRangeService.GetProductAvailabilityRangeByIdAsync(product.ProductAvailabilityRangeId);
+                stockMessage = (productAvailabilityRange == null || product.NotifyAdminForQuantityBelow == 0)
                     ? await _localizationService.GetResourceAsync("Products.Availability.OutOfStock")
                     : string.Format(await _localizationService.GetResourceAsync("Products.Availability.AvailabilityRange"),
                         await _localizationService.GetLocalizedAsync(productAvailabilityRange, range => range.Name));
             }
-            else
-                stockMessage = await _localizationService.GetResourceAsync("Products.Availability.InStock");
         }
 
         return stockMessage;
     }
 
     /// <summary>
-    /// Get stock message
+    /// Get stock message for a product with attributes
+    /// </summary>
+    /// <param name="product">Product</param>
+    /// <param name="attributesXml">Attributes in XML format</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the message
+    /// </returns>
+    //protected virtual async Task<string> GetStockMessageForAttributesAsync(Product product, string attributesXml)
+    //{
+    //    if (!product.DisplayStockAvailability)
+    //        return string.Empty;
+
+    //    string stockMessage;
+
+    //    //XD Update
+    //    string deliveryDateString;
+
+    //    var combination = await _productAttributeParser.FindProductAttributeCombinationAsync(product, attributesXml);
+    //    if (combination != null)
+    //    {
+    //        //combination exists = in stock
+    //        var stockQuantity = combination.StockQuantity;
+    //        if (stockQuantity > 0)
+    //        {
+    //            if (product.MinStockQuantity >= stockQuantity && product.LowStockActivity == LowStockActivity.Nothing)
+    //            {
+    //                stockMessage = product.DisplayStockQuantity
+    //                    ?
+    //                    //display "low stock" with stock quantity
+    //                    string.Format(await _localizationService.GetResourceAsync("Products.Availability.LowStockWithQuantity"), stockQuantity)
+    //                    :
+    //                    //display "low stock" without stock quantity
+    //                    await _localizationService.GetResourceAsync("Products.Availability.LowStock");
+    //            }
+    //            else
+    //            {
+    //                stockMessage = product.DisplayStockQuantity
+    //                    ?
+    //                    //display "in stock" with stock quantity
+    //                    string.Format(await _localizationService.GetResourceAsync("Products.Availability.InStockWithQuantity"), stockQuantity)
+    //                    :
+    //                    //display "in stock" without stock quantity
+    //                    await _localizationService.GetResourceAsync("Products.Availability.InStock");
+    //            }
+    //        }
+    //        else
+    //        {
+    //            if (combination.AllowOutOfStockOrders)
+    //                stockMessage = await _localizationService.GetResourceAsync("Products.Availability.InStock");
+    //            else
+    //            {
+    //                var productAvailabilityRange = await
+    //                    _dateRangeService.GetProductAvailabilityRangeByIdAsync(product.ProductAvailabilityRangeId);
+    //                stockMessage = productAvailabilityRange == null
+    //                    ? await _localizationService.GetResourceAsync("Products.Availability.OutOfStock")
+    //                    : string.Format(await _localizationService.GetResourceAsync("Products.Availability.AvailabilityRange"),
+    //                        await _localizationService.GetLocalizedAsync(productAvailabilityRange, range => range.Name));
+    //            }
+    //        }
+    //    }
+    //    else
+    //    {
+    //        //no combination configured
+    //        if (product.AllowAddingOnlyExistingAttributeCombinations)
+    //        {
+    //            var allIds = (await _productAttributeService.GetProductAttributeMappingsByProductIdAsync(product.Id)).Where(pa => pa.IsRequired).Select(pa => pa.Id).ToList();
+    //            var exIds = (await _productAttributeParser.ParseProductAttributeMappingsAsync(attributesXml)).Select(pa => pa.Id).ToList();
+
+    //            var selectedIds = allIds.Intersect(exIds).ToList();
+
+    //            if (selectedIds.Count != allIds.Count)
+    //            {
+    //                if (_catalogSettings.AttributeValueOutOfStockDisplayType == AttributeValueOutOfStockDisplayType.AlwaysDisplay)
+    //                    return await _localizationService.GetResourceAsync("Products.Availability.SelectRequiredAttributes");
+    //                else
+    //                {
+    //                    var combinations = await _productAttributeService.GetAllProductAttributeCombinationsAsync(product.Id);
+
+    //                    combinations = combinations.Where(p => p.StockQuantity >= 0 || p.AllowOutOfStockOrders).ToList();
+
+    //                    var attributes = await combinations.SelectAwait(async c => await _productAttributeParser.ParseProductAttributeMappingsAsync(c.AttributesXml)).ToListAsync();
+
+    //                    var flag = attributes.SelectMany(a => a).Any(a => selectedIds.Contains(a.Id));
+
+    //                    if (flag)
+    //                        return await _localizationService.GetResourceAsync("Products.Availability.SelectRequiredAttributes");
+    //                }
+    //            }
+
+    //            var productAvailabilityRange = await
+    //                _dateRangeService.GetProductAvailabilityRangeByIdAsync(product.ProductAvailabilityRangeId);
+    //            stockMessage = productAvailabilityRange == null
+    //                ? await _localizationService.GetResourceAsync("Products.Availability.OutOfStock")
+    //                : string.Format(await _localizationService.GetResourceAsync("Products.Availability.AvailabilityRange"),
+    //                    await _localizationService.GetLocalizedAsync(productAvailabilityRange, range => range.Name));
+    //        }
+    //        else
+    //            stockMessage = await _localizationService.GetResourceAsync("Products.Availability.InStock");
+    //    }
+
+    //    return stockMessage;
+    //}
+
+    /// <summary>
+    /// Get stock message XD Update Version
     /// </summary>
     /// <param name="product">Product</param>
     /// <returns>
@@ -344,31 +475,27 @@ public partial class ProductService : IProductService
         if (!product.DisplayStockAvailability)
             return string.Empty;
 
+        //XD Update
+        var customer = await _workContext.GetCurrentCustomerAsync();
+        var userIsReseller = _customerService.IsInCustomerRoleAsync(customer, "subdealers").Result;
+
         var stockMessage = string.Empty;
         var stockQuantity = await GetTotalStockQuantityAsync(product);
-
         if (stockQuantity > 0)
         {
-            if (product.MinStockQuantity >= stockQuantity && product.LowStockActivity == LowStockActivity.Nothing)
-            {
-                stockMessage = product.DisplayStockQuantity
-                    ?
-                    //display "low stock" with stock quantity
-                    string.Format(await _localizationService.GetResourceAsync("Products.Availability.LowStockWithQuantity"), stockQuantity)
-                    :
-                    //display "low stock" without stock quantity
-                    await _localizationService.GetResourceAsync("Products.Availability.LowStock");
-            }
-            else
-            {
-                stockMessage = product.DisplayStockQuantity
-                    ?
-                    //display "in stock" with stock quantity
-                    string.Format(await _localizationService.GetResourceAsync("Products.Availability.InStockWithQuantity"), stockQuantity)
-                    :
-                    //display "in stock" without stock quantity
-                    await _localizationService.GetResourceAsync("Products.Availability.InStock");
-            }
+            //delivery date (//XD UPdate)
+            var deliveryDate = await _dateRangeService.GetDeliveryDateByIdAsync(product.DeliveryDateId);
+            string deliveryDateString = (deliveryDate == null)
+                ? ""
+                : await _localizationService.GetLocalizedAsync(deliveryDate, dd => dd.Name);
+
+            stockMessage = (product.DisplayStockQuantity || userIsReseller) //XD Update
+                ?
+                //display "in stock" with stock quantity
+                string.Format(await _localizationService.GetResourceAsync("Products.Availability.InStockWithQuantity"), stockQuantity, deliveryDateString)
+                :
+                //display "in stock" without stock quantity
+                string.Format(await _localizationService.GetResourceAsync("Products.Availability.InStock"), deliveryDateString);
         }
         else
         {
@@ -396,6 +523,72 @@ public partial class ProductService : IProductService
 
         return stockMessage;
     }
+
+    /// <summary>
+    /// Get stock message
+    /// </summary>
+    /// <param name="product">Product</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the message
+    /// </returns>
+    //protected virtual async Task<string> GetStockMessageAsync(Product product)
+    //{
+    //    if (!product.DisplayStockAvailability)
+    //        return string.Empty;
+
+    //    var stockMessage = string.Empty;
+    //    var stockQuantity = await GetTotalStockQuantityAsync(product);
+
+    //    if (stockQuantity > 0)
+    //    {
+    //        if (product.MinStockQuantity >= stockQuantity && product.LowStockActivity == LowStockActivity.Nothing)
+    //        {
+    //            stockMessage = product.DisplayStockQuantity
+    //                ?
+    //                //display "low stock" with stock quantity
+    //                string.Format(await _localizationService.GetResourceAsync("Products.Availability.LowStockWithQuantity"), stockQuantity)
+    //                :
+    //                //display "low stock" without stock quantity
+    //                await _localizationService.GetResourceAsync("Products.Availability.LowStock");
+    //        }
+    //        else
+    //        {
+    //            stockMessage = product.DisplayStockQuantity
+    //                ?
+    //                //display "in stock" with stock quantity
+    //                string.Format(await _localizationService.GetResourceAsync("Products.Availability.InStockWithQuantity"), stockQuantity)
+    //                :
+    //                //display "in stock" without stock quantity
+    //                await _localizationService.GetResourceAsync("Products.Availability.InStock");
+    //        }
+    //    }
+    //    else
+    //    {
+    //        //out of stock
+    //        var productAvailabilityRange = await _dateRangeService.GetProductAvailabilityRangeByIdAsync(product.ProductAvailabilityRangeId);
+    //        switch (product.BackorderMode)
+    //        {
+    //            case BackorderMode.NoBackorders:
+    //                stockMessage = productAvailabilityRange == null
+    //                    ? await _localizationService.GetResourceAsync("Products.Availability.OutOfStock")
+    //                    : string.Format(await _localizationService.GetResourceAsync("Products.Availability.AvailabilityRange"),
+    //                        await _localizationService.GetLocalizedAsync(productAvailabilityRange, range => range.Name));
+    //                break;
+    //            case BackorderMode.AllowQtyBelow0:
+    //                stockMessage = await _localizationService.GetResourceAsync("Products.Availability.InStock");
+    //                break;
+    //            case BackorderMode.AllowQtyBelow0AndNotifyCustomer:
+    //                stockMessage = productAvailabilityRange == null
+    //                    ? await _localizationService.GetResourceAsync("Products.Availability.Backordering")
+    //                    : string.Format(await _localizationService.GetResourceAsync("Products.Availability.BackorderingWithDate"),
+    //                        await _localizationService.GetLocalizedAsync(productAvailabilityRange, range => range.Name));
+    //                break;
+    //        }
+    //    }
+
+    //    return stockMessage;
+    //}
 
     /// <summary>
     /// Reserve the given quantity in the warehouses.
@@ -1248,6 +1441,53 @@ public partial class ProductService : IProductService
     }
 
     /// <summary>
+        /// Get low stock products - XD Update version
+        /// </summary>
+        /// <param name="vendorId">Vendor identifier; pass null to load all records</param>
+        /// <param name="loadPublishedOnly">Whether to load published products only; pass null to load all products, pass true to load only published products, pass false to load only unpublished products</param>
+        /// <param name="pageIndex">Page index</param>
+        /// <param name="pageSize">Page size</param>
+        /// <param name="getOnlyTotalCount">A value in indicating whether you want to load only total number of records. Set to "true" if you don't want to load data from database</param>
+        /// <returns>
+        /// A task that represents the asynchronous operation
+        /// The task result contains the products
+        /// </returns>
+        public virtual async Task<IPagedList<Product>> GetLowStockProductsAsync(int? vendorId = null, bool? loadPublishedOnly = true,
+            int pageIndex = 0, int pageSize = int.MaxValue, bool getOnlyTotalCount = false)
+        {
+            var query = _productRepository.Table;
+
+            //filter by products with tracking inventory
+            query = query.Where(product => product.ManageInventoryMethodId == (int)ManageInventoryMethod.ManageStock);
+
+            //XD Update - use target stock not low stock report
+            query = query.Where(product =>
+            (product.UseMultipleWarehouses ? _productWarehouseInventoryRepository.Table.Where(pwi => pwi.ProductId == product.Id).Sum(pwi => pwi.StockQuantity - pwi.ReservedQuantity)
+                : product.StockQuantity) < product.NotifyAdminForQuantityBelow);
+
+            //ignore deleted products
+            query = query.Where(product => !product.Deleted);
+
+            //ignore grouped products
+            query = query.Where(product => product.ProductTypeId != (int)ProductType.GroupedProduct);
+
+            //filter by vendor
+            if (vendorId.HasValue && vendorId.Value > 0)
+                query = query.Where(product => product.VendorId == vendorId.Value);
+
+            //whether to load published products only
+            if (loadPublishedOnly.HasValue)
+                query = query.Where(product => product.Published == loadPublishedOnly.Value);
+
+            //query = query.OrderBy(product => product.MinStockQuantity).ThenBy(product => product.DisplayOrder).ThenBy(product => product.Id);
+
+            //XD Update
+            query = query.OrderBy(product => _productManufacturerRepository.Table.Where(pmr => pmr.ProductId == product.Id).Select(pmr => pmr.ManufacturerId).OrderBy(mid => mid).FirstOrDefault());
+
+            return await query.ToPagedListAsync(pageIndex, pageSize, getOnlyTotalCount);
+        }
+
+    /// <summary>
     /// Get low stock products
     /// </summary>
     /// <param name="vendorId">Vendor identifier; pass null to load all records</param>
@@ -1259,40 +1499,40 @@ public partial class ProductService : IProductService
     /// A task that represents the asynchronous operation
     /// The task result contains the products
     /// </returns>
-    public virtual async Task<IPagedList<Product>> GetLowStockProductsAsync(int? vendorId = null, bool? loadPublishedOnly = true,
-        int pageIndex = 0, int pageSize = int.MaxValue, bool getOnlyTotalCount = false)
-    {
-        var query = _productRepository.Table;
+    //public virtual async Task<IPagedList<Product>> GetLowStockProductsAsync(int? vendorId = null, bool? loadPublishedOnly = true,
+    //    int pageIndex = 0, int pageSize = int.MaxValue, bool getOnlyTotalCount = false)
+    //{
+    //    var query = _productRepository.Table;
 
-        //filter by products with tracking inventory
-        query = query.Where(product => product.ManageInventoryMethodId == (int)ManageInventoryMethod.ManageStock);
+    //    //filter by products with tracking inventory
+    //    query = query.Where(product => product.ManageInventoryMethodId == (int)ManageInventoryMethod.ManageStock);
 
-        //filter by products with stock quantity less than the minimum
-        query = query.Where(product =>
-            (product.UseMultipleWarehouses ? _productWarehouseInventoryRepository.Table.Where(pwi => pwi.ProductId == product.Id).Sum(pwi => pwi.StockQuantity - pwi.ReservedQuantity)
-                : product.StockQuantity) <= product.MinStockQuantity);
+    //    //filter by products with stock quantity less than the minimum
+    //    query = query.Where(product =>
+    //        (product.UseMultipleWarehouses ? _productWarehouseInventoryRepository.Table.Where(pwi => pwi.ProductId == product.Id).Sum(pwi => pwi.StockQuantity - pwi.ReservedQuantity)
+    //            : product.StockQuantity) <= product.MinStockQuantity);
 
-        //ignore deleted products
-        query = query.Where(product => !product.Deleted);
+    //    //ignore deleted products
+    //    query = query.Where(product => !product.Deleted);
 
-        //ignore grouped products
-        query = query.Where(product => product.ProductTypeId != (int)ProductType.GroupedProduct);
+    //    //ignore grouped products
+    //    query = query.Where(product => product.ProductTypeId != (int)ProductType.GroupedProduct);
 
-        //filter by vendor
-        if (vendorId.HasValue && vendorId.Value > 0)
-            query = query.Where(product => product.VendorId == vendorId.Value);
+    //    //filter by vendor
+    //    if (vendorId.HasValue && vendorId.Value > 0)
+    //        query = query.Where(product => product.VendorId == vendorId.Value);
 
-        //whether to load published products only
-        if (loadPublishedOnly.HasValue)
-            query = query.Where(product => product.Published == loadPublishedOnly.Value);
+    //    //whether to load published products only
+    //    if (loadPublishedOnly.HasValue)
+    //        query = query.Where(product => product.Published == loadPublishedOnly.Value);
 
-        query = query.OrderBy(product => product.MinStockQuantity).ThenBy(product => product.DisplayOrder).ThenBy(product => product.Id);
+    //    query = query.OrderBy(product => product.MinStockQuantity).ThenBy(product => product.DisplayOrder).ThenBy(product => product.Id);
 
-        return await query.ToPagedListAsync(pageIndex, pageSize, getOnlyTotalCount);
-    }
+    //    return await query.ToPagedListAsync(pageIndex, pageSize, getOnlyTotalCount);
+    //}
 
     /// <summary>
-    /// Get low stock product combinations
+    /// Get low stock product combinations - XD version
     /// </summary>
     /// <param name="vendorId">Vendor identifier; pass null to load all records</param>
     /// <param name="loadPublishedOnly">Whether to load combinations of published products only; pass null to load all products, pass true to load only published products, pass false to load only unpublished products</param>
@@ -1307,25 +1547,62 @@ public partial class ProductService : IProductService
         int pageIndex = 0, int pageSize = int.MaxValue, bool getOnlyTotalCount = false)
     {
         var combinations = from pac in _productAttributeCombinationRepository.Table
-            join p in _productRepository.Table on pac.ProductId equals p.Id
-            where
-                //filter by combinations with stock quantity less than the minimum
-                pac.StockQuantity <= pac.MinStockQuantity &&
-                //filter by products with tracking inventory by attributes
-                p.ManageInventoryMethodId == (int)ManageInventoryMethod.ManageStockByAttributes &&
-                //ignore deleted products
-                !p.Deleted &&
-                //ignore grouped products
-                p.ProductTypeId != (int)ProductType.GroupedProduct &&
-                //filter by vendor
-                ((vendorId ?? 0) == 0 || p.VendorId == vendorId) &&
-                //whether to load published products only
-                (loadPublishedOnly == null || p.Published == loadPublishedOnly)
-            orderby pac.ProductId, pac.Id
-            select pac;
+                           join p in _productRepository.Table on pac.ProductId equals p.Id
+                           join pm in _productManufacturerRepository.Table on p.Id equals pm.ProductId
+                           where
+                               //filter by combinations with stock quantity less than the minimum
+                               pac.StockQuantity < pac.NotifyAdminForQuantityBelow && //pac.StockQuantity <= 0 && //XD Update: use target stock
+                                                                                      //filter by products with tracking inventory by attributes
+                               p.ManageInventoryMethodId == (int)ManageInventoryMethod.ManageStockByAttributes &&
+                               //ignore deleted products
+                               !p.Deleted &&
+                               //ignore grouped products
+                               p.ProductTypeId != (int)ProductType.GroupedProduct &&
+                               //filter by vendor
+                               ((vendorId ?? 0) == 0 || p.VendorId == vendorId) &&
+                               //whether to load published products only
+                               (loadPublishedOnly == null || p.Published == loadPublishedOnly)
+                           orderby pm.ManufacturerId, pac.ProductId, pac.Id
+                           select pac;
 
         return await combinations.ToPagedListAsync(pageIndex, pageSize, getOnlyTotalCount);
     }
+
+    /// <summary>
+    /// Get low stock product combinations
+    /// </summary>
+    /// <param name="vendorId">Vendor identifier; pass null to load all records</param>
+    /// <param name="loadPublishedOnly">Whether to load combinations of published products only; pass null to load all products, pass true to load only published products, pass false to load only unpublished products</param>
+    /// <param name="pageIndex">Page index</param>
+    /// <param name="pageSize">Page size</param>
+    /// <param name="getOnlyTotalCount">A value in indicating whether you want to load only total number of records. Set to "true" if you don't want to load data from database</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the product combinations
+    /// </returns>
+    //public virtual async Task<IPagedList<ProductAttributeCombination>> GetLowStockProductCombinationsAsync(int? vendorId = null, bool? loadPublishedOnly = true,
+    //    int pageIndex = 0, int pageSize = int.MaxValue, bool getOnlyTotalCount = false)
+    //{
+    //    var combinations = from pac in _productAttributeCombinationRepository.Table
+    //        join p in _productRepository.Table on pac.ProductId equals p.Id
+    //        where
+    //            //filter by combinations with stock quantity less than the minimum
+    //            pac.StockQuantity <= pac.MinStockQuantity &&
+    //            //filter by products with tracking inventory by attributes
+    //            p.ManageInventoryMethodId == (int)ManageInventoryMethod.ManageStockByAttributes &&
+    //            //ignore deleted products
+    //            !p.Deleted &&
+    //            //ignore grouped products
+    //            p.ProductTypeId != (int)ProductType.GroupedProduct &&
+    //            //filter by vendor
+    //            ((vendorId ?? 0) == 0 || p.VendorId == vendorId) &&
+    //            //whether to load published products only
+    //            (loadPublishedOnly == null || p.Published == loadPublishedOnly)
+    //        orderby pac.ProductId, pac.Id
+    //        select pac;
+
+    //    return await combinations.ToPagedListAsync(pageIndex, pageSize, getOnlyTotalCount);
+    //}
 
     /// <summary>
     /// Gets a product by SKU
@@ -1590,6 +1867,109 @@ public partial class ProductService : IProductService
         }
 
         return stockMessage;
+    }
+
+    //XD Update
+    /// <summary>
+    /// Gets the stock availability CSS class
+    /// </summary>
+    /// <param name="product">Product</param>
+    /// <param name="attributesXml">Selected product attributes in XML format (if specified)</param>
+    /// <returns>The stock availability CSS class</returns>
+    public virtual async Task<string> GetStockCssClass(Product product, string attributesXml)
+    {
+        ArgumentNullException.ThrowIfNull(product);
+
+        string stockCssClass = string.Empty;
+
+        string inStock = "in-stock";
+        string backOrder = "on-backorder";
+        string outOfStock = "out-of-stock";
+
+        switch (product.ManageInventoryMethod)
+        {
+            case ManageInventoryMethod.ManageStock:
+                {
+                    #region Manage stock
+
+                    if (!product.DisplayStockAvailability)
+                        return stockCssClass;
+
+                    var stockQuantity = await GetTotalStockQuantityAsync(product);
+                    if (stockQuantity > 0)
+                    {
+                        stockCssClass = inStock;
+                    }
+                    else
+                    {
+                        //out of stock
+                        switch (product.BackorderMode)
+                        {
+                            case BackorderMode.NoBackorders:
+                                stockCssClass = outOfStock;
+                                break;
+                            case BackorderMode.AllowQtyBelow0:
+                                stockCssClass = inStock;
+                                break;
+                            case BackorderMode.AllowQtyBelow0AndNotifyCustomer:
+                                stockCssClass = backOrder;
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+
+                    #endregion
+                }
+                break;
+            case ManageInventoryMethod.ManageStockByAttributes:
+                {
+                    #region Manage stock by attributes
+
+                    if (!product.DisplayStockAvailability)
+                        return stockCssClass;
+
+                    var combination = await _productAttributeParser.FindProductAttributeCombinationAsync(product, attributesXml);
+                    if (combination != null)
+                    {
+                        //combination exists
+                        var stockQuantity = combination.StockQuantity;
+                        if (stockQuantity > 0)
+                        {
+                            stockCssClass = inStock;
+                        }
+                        else if (combination.AllowOutOfStockOrders)
+                        {
+                            stockCssClass = backOrder;
+                        }
+                        else
+                        {
+                            stockCssClass = outOfStock;
+                        }
+                    }
+                    else if (product.AllowAddingOnlyExistingAttributeCombinations)
+                    {
+                        var requiredIds = (await _productAttributeService.GetProductAttributeMappingsByProductIdAsync(product.Id))
+                            .Where(attribute => attribute.IsRequired).Select(attribute => attribute.Id);
+                        var selectedIds = (await _productAttributeParser.ParseProductAttributeMappingsAsync(attributesXml))
+                            .Select(attribute => attribute.Id).ToHashSet();
+
+                        if (requiredIds.All(selectedIds.Contains))
+                            stockCssClass = backOrder;
+                    }
+                    else
+                    {
+                        stockCssClass = outOfStock;
+                    }
+
+                    #endregion
+                }
+                break;
+            case ManageInventoryMethod.DontManageStock:
+            default:
+                return stockCssClass;
+        }
+        return stockCssClass;
     }
 
     /// <summary>

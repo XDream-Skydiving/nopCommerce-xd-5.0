@@ -19,6 +19,11 @@ public partial record ProductCombinationModel : BaseNopModel
     /// </summary>
     public bool InStock { get; set; }
 
+    /// <summary>
+    /// Gets or sets a value indicating whether the combination is out of stock but can be backordered
+    /// </summary>
+    public bool IsBackorder { get; set; }
+
     #endregion
 
     #region Ctor

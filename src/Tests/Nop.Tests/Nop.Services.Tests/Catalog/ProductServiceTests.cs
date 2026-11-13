@@ -60,6 +60,87 @@ public class ProductServiceTests : ServiceTest
 
     #region Tests
 
+    [TestCase(2, BackorderMode.NoBackorders, "in-stock")]
+    [TestCase(0, BackorderMode.NoBackorders, "out-of-stock")]
+    [TestCase(-1, BackorderMode.AllowQtyBelow0, "in-stock")]
+    [TestCase(0, BackorderMode.AllowQtyBelow0AndNotifyCustomer, "on-backorder")]
+    public async Task CanGetStockCssClassForProductStock(int quantity, BackorderMode backorderMode, string expected)
+    {
+        var product = new Product
+        {
+            ManageInventoryMethod = ManageInventoryMethod.ManageStock,
+            DisplayStockAvailability = true,
+            StockQuantity = quantity,
+            BackorderMode = backorderMode
+        };
+
+        (await _productService.GetStockCssClass(product, string.Empty)).Should().Be(expected);
+        product.DisplayStockAvailability = false;
+        (await _productService.GetStockCssClass(product, string.Empty)).Should().BeEmpty();
+    }
+
+    [Test]
+    public async Task CanGetStockCssClassForAttributeCombinations()
+    {
+        var attributeService = GetService<IProductAttributeService>();
+        var parser = GetService<IProductAttributeParser>();
+        var product = new Product
+        {
+            Name = "Stock class test",
+            ManageInventoryMethod = ManageInventoryMethod.ManageStockByAttributes,
+            DisplayStockAvailability = true,
+            AllowAddingOnlyExistingAttributeCombinations = true
+        };
+        var attribute = new ProductAttribute { Name = "Stock class test" };
+        await _productService.InsertProductAsync(product);
+        await attributeService.InsertProductAttributeAsync(attribute);
+        var mapping = new ProductAttributeMapping
+        {
+            ProductId = product.Id,
+            ProductAttributeId = attribute.Id,
+            IsRequired = true,
+            AttributeControlType = AttributeControlType.DropdownList
+        };
+        await attributeService.InsertProductAttributeMappingAsync(mapping);
+        var xml = parser.AddProductAttribute(string.Empty, mapping, "1");
+        var combination = new ProductAttributeCombination { ProductId = product.Id, AttributesXml = xml };
+        await attributeService.InsertProductAttributeCombinationAsync(combination);
+
+        try
+        {
+            (await _productService.GetStockCssClass(product, string.Empty)).Should().BeEmpty();
+            (await _productService.GetStockCssClass(product, xml)).Should().Be("out-of-stock");
+
+            combination.AllowOutOfStockOrders = true;
+            await attributeService.UpdateProductAttributeCombinationAsync(combination);
+            (await _productService.GetStockCssClass(product, xml)).Should().Be("on-backorder");
+
+            combination.StockQuantity = -1;
+            await attributeService.UpdateProductAttributeCombinationAsync(combination);
+            (await _productService.GetStockCssClass(product, xml)).Should().Be("on-backorder");
+
+            combination.StockQuantity = 1;
+            await attributeService.UpdateProductAttributeCombinationAsync(combination);
+            (await _productService.GetStockCssClass(product, xml)).Should().Be("in-stock");
+
+            product.DisplayStockAvailability = false;
+            (await _productService.GetStockCssClass(product, xml)).Should().BeEmpty();
+            product.DisplayStockAvailability = true;
+
+            var unmatchedXml = parser.AddProductAttribute(string.Empty, mapping, "2");
+            (await _productService.GetStockCssClass(product, unmatchedXml)).Should().Be("on-backorder");
+            product.AllowAddingOnlyExistingAttributeCombinations = false;
+            (await _productService.GetStockCssClass(product, unmatchedXml)).Should().Be("out-of-stock");
+        }
+        finally
+        {
+            await attributeService.DeleteProductAttributeCombinationAsync(combination);
+            await attributeService.DeleteProductAttributeMappingAsync(mapping);
+            await attributeService.DeleteProductAttributeAsync(attribute);
+            await _productService.DeleteProductAsync(product);
+        }
+    }
+
     [Test]
     public void CanParseRequiredProductIds()
     {

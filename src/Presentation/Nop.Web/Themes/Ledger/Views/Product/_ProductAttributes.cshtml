@@ -388,23 +388,26 @@
         </script>
     </div>
 
-    if (Model.AllowAddingOnlyExistingAttributeCombinations && catalogSettings.AttributeValueOutOfStockDisplayType == AttributeValueOutOfStockDisplayType.Disable)
+
+    //if (Model.AllowAddingOnlyExistingAttributeCombinations && catalogSettings.AttributeValueOutOfStockDisplayType == AttributeValueOutOfStockDisplayType.Disable)
+    //XD update - use this even if we allow non existing attribute combinations
+    if (catalogSettings.AttributeValueOutOfStockDisplayType == AttributeValueOutOfStockDisplayType.Disable)
     {
         <script src="~/js/public.combinationsbehavior.js" asp-location="Footer"></script>
 
         <script asp-location="Footer">
             var combinationsBehavior_@(Model.Id);
-            $(function() {
+            $(document).ready(function () {
                 combinationsBehavior_@(Model.Id) = createCombinationsBehavior({
                     contentEl: '[data-productid="@Model.Id"]',
-                    fetchUrl: '@Html.Raw(Url.RouteUrl(NopRouteNames.Ajax.GET_PRODUCT_COMBINATIONS, new { productId = Model.Id }))'
+                    fetchUrl: '@Html.Raw(Url.RouteUrl("GetProductCombinations", new { productId = Model.Id }))'
                 });
                 combinationsBehavior_@(Model.Id).init();
             });
         </script>
     }
 
-    @if (Model.ManageInventoryMethod == ManageInventoryMethod.ManageStockByAttributes)
+    @* @if (Model.ManageInventoryMethod == ManageInventoryMethod.ManageStockByAttributes)
     {
         <script asp-location="Footer">
             (function () {
@@ -419,6 +422,7 @@
                             ids.push(parseInt($value.data('attr-value')));
                         }
                     });
+                    console.log(ids);
                     return ids;
                 }
 
@@ -443,8 +447,19 @@
                 function updateStockUi() {
                     var selectedIds = getSelectedValueIds();
                     var combination = findMatchingCombination(selectedIds);
-                    //no exact combination match yet (attributes not fully selected) - don't restrict
-                    var inStock = !combination || combination.InStock;
+
+                    console.log(selectedIds, combination);
+                    
+                    // var inStock = !combination || combination.InStock;
+
+                    if(!combination){
+                        //no exact combination match yet (attributes not fully selected) - don't restrict
+                        //TODO: select message
+                    } else
+                    {
+                        //TODO: Differentiate backorder from stock
+                        var inStock = combination.InStock;
+                    }
 
                     $('#add-to-cart-button-@Model.Id').prop('disabled', !inStock);
                     $('#stock-availability-value-@Model.Id').closest('.stock').toggleClass('out-of-stock', !inStock);
@@ -453,12 +468,13 @@
 
                 $.get(combinationsUrl, function (response) {
                     combinations = response;
+                    console.log(combinations);
                     updateStockUi();
                     $(document).on('product_attributes_changed', updateStockUi);
                 });
             })();
         </script>
-    }
+    } *@
 
     //dynamic update support
     var attributesHaveConditions = Model.ProductAttributes.Any(x => x.HasCondition);
@@ -527,13 +543,18 @@
         //render scripts
         //almost the same implementation is used in the \Views\Product\_RentalInfo.cshtml file
         <script asp-location="Footer">
+            var attributeChangeRequest_@(Model.Id) = 0;
             function @(attributeChangeHandlerFuncName)() {
+                var requestId = ++attributeChangeRequest_@(Model.Id);
                 $.ajax({
                     cache: false,
                     url: "@Html.Raw(Url.RouteUrl(NopRouteNames.Ajax.PRODUCT_DETAILS_ATTRIBUTE_CHANGE, new { productId = Model.Id, validateAttributeConditions = attributesHaveConditions, loadPicture = attributesHaveAssociatedPictures }))",
                     data: $('#product-details-form').serialize(),
                     type: "POST",
                     success: function (data, textStatus, jqXHR) {
+                        if (requestId !== attributeChangeRequest_@(Model.Id))
+                            return;
+
                         if (data.price) {
                             $('.price-value-@Model.Id').text(data.price);
                         }
@@ -557,8 +578,13 @@
                         } else {
                             $('#gtin-@Model.Id').parent(".gtin").hide();
                         }
-                        if (data.stockAvailability) {
-                            $('#stock-availability-value-@Model.Id').text(data.stockAvailability);
+                        if (data.stockAvailability !== undefined) {
+                            var $stockAvailability = $('#stock-availability-value-@Model.Id');
+                            var stockClasses = 'in-stock on-backorder out-of-stock';
+                            $stockAvailability.text(data.stockAvailability)
+                                .removeClass(stockClasses).addClass(data.stockAvailabilityCssClass || '');
+                            $stockAvailability.closest('.stock')
+                                .removeClass(stockClasses).addClass(data.stockAvailabilityCssClass || '');
                         }
                         if (data.enabledattributemappingids) {
                             for (var i = 0; i < data.enabledattributemappingids.length; i++) {

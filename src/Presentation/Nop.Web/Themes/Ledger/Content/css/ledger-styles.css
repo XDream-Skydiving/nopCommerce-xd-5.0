@@ -1828,11 +1828,21 @@ input[type="button"] {
 .overview .stock .value {
   display: inline-block;
   font-weight: 600;
-  color: var(--lg-success);
-  background: var(--lg-success-soft);
+  background: blue;
+  color: pink;
   border-radius: var(--lg-radius-pill);
   padding: 4px 12px;
 }
+
+  .overview .stock.in-stock .value {
+    color: var(--lg-success);
+    background: var(--lg-success-soft);
+  }
+
+  .overview .stock.on-backorder .value {
+    color: var(--lg-warning);
+    background: var(--lg-warning-soft);
+  }   
 
 .overview .stock.out-of-stock .value {
   color: var(--lg-danger);

@@ -88,6 +88,8 @@ public partial record ProductDetailsModel : BaseNopEntityModel, IMetaTagsSupport
 
     public string StockAvailability { get; set; }
 
+    public string StockAvailabilityCssClass { get; set; } //XD Update
+
     public bool DisplayBackInStockSubscription { get; set; }
 
     public bool DisplayAttributeCombinationImagesOnly { get; set; }
@@ -129,6 +131,10 @@ public partial record ProductDetailsModel : BaseNopEntityModel, IMetaTagsSupport
     public bool InStock { get; set; }
 
     public bool AllowAddingOnlyExistingAttributeCombinations { get; set; }
+
+    public bool DisableBuyButton { get; set; } //XD Update
+
+    public decimal Weight { get; set; } //XD Update
 
     #region Nested Classes
 

@@ -1458,7 +1458,8 @@ public partial class ProductModelFactory : IProductModelFactory
             {
                 var combinationModel = new ProductCombinationModel
                 {
-                    InStock = combination.StockQuantity > 0 || combination.AllowOutOfStockOrders
+                    InStock = combination.StockQuantity > 0,
+                    IsBackorder = combination.StockQuantity <= 0 && combination.AllowOutOfStockOrders
                 };
 
                 var mappings = await _productAttributeParser
@@ -1526,7 +1527,10 @@ public partial class ProductModelFactory : IProductModelFactory
             ShowGtin = _catalogSettings.ShowGtin,
             Gtin = product.Gtin,
             ManageInventoryMethod = product.ManageInventoryMethod,
+            //DisableBuyButton = product.DisableBuyButton, //XD Update
+            //Weight = product.Weight, //XD update
             StockAvailability = await _productService.FormatStockMessageAsync(product, string.Empty),
+            StockAvailabilityCssClass = await _productService.GetStockCssClass(product, string.Empty), //XD UPdate
             HasSampleDownload = product.IsDownload && product.HasSampleDownload,
             DisplayDiscontinuedMessage = !product.Published && _catalogSettings.DisplayDiscontinuedMessageForUnpublishedProducts,
             AvailableEndDate = product.AvailableEndDateTimeUtc,

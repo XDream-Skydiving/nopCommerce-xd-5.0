@@ -442,6 +442,8 @@
                     data: $('#product-details-form').serialize(),
                     type: "POST",
                     success: function (data, textStatus, jqXHR) {
+                        console.log('data');
+                        console.log(data);
                         if (data.price) {
                             $('.price-value-@Model.Id').text(data.price);
                         }

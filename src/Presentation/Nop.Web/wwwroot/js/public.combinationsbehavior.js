@@ -42,20 +42,20 @@
 
           var selectedAttributes = self.getSelectedAttributes();
           if (selectedAttributes && selectedAttributes.length > 0) {
-            // unselect selected values if they are preselected but not available
-            var availableAttributes = $.grep(selectedAttributes, function (attribute) {
-              return attribute.values.length > 0;
-            });
-            $.each(availableAttributes, function (i, attribute) {
-              var combinations = self.getCombinationsByAttributeId(attribute.id, [attribute]);
-              if (combinations && combinations.length > 0) {
-                if (!self.isAvailableCombination(combinations, [attribute])) {
-                  self.unselectValues(attribute.values);
-                }
-              } else {
-                self.unselectValues(attribute.values);
-              }
-            });
+            // unselect selected values if they are preselected but not available //XD update- don't unselect
+            //var availableAttributes = $.grep(selectedAttributes, function (attribute) {
+            //  return attribute.values.length > 0;
+            //});
+            //$.each(availableAttributes, function (i, attribute) {
+            //  var combinations = self.getCombinationsByAttributeId(attribute.id, [attribute]);
+            //  if (combinations && combinations.length > 0) {
+            //    if (!self.isAvailableCombination(combinations, [attribute])) {
+            //      self.unselectValues(attribute.values);
+            //    }
+            //  } else {
+            //    self.unselectValues(attribute.values);
+            //  }
+            //});
 
           }
 
@@ -77,18 +77,27 @@
       // disable all attribute values if combinations isn't available
       var availableCombinations = this.params.availableCombinations;
       if (availableCombinations.length === 0) {
-        var valueIds = this.getAttributeValueIds();
-        $.each(valueIds, function (i, valueId) {
-          self.toggleAttributeValue(valueId, false);
-        });
+        //XD UPdate: Don't disable anything if we don't use combinations on a product (e.g. custom gloves)
+        //var valueIds = this.getAttributeValueIds();
+        //$.each(valueIds, function (i, valueId) {
+        //  self.toggleAttributeValue(valueId, false);
+        //});
 
         return;
       }
 
       var selectedAttributes = self.getSelectedAttributes();
+      console.log(selectedAttributes);
+
+      var dataAttributes = $(self.settings.contentEl).find('[data-attr-value]');
+      console.log(dataAttributes);
+      $.each(dataAttributes, function (i, li) {
+        //console.log(i, li);
+        $(li).removeClass('instock backorder disabled');
+      });
 
       $.each(availableAttributeIds, function (attrIndex, attributeId) {
-        var attibuteValueIds = self.getAttributeValueIds(attributeId);
+        var attibuteValueIds = self.getAttributeValueIds(attributeId); //get each value for the current (in loop) attribute
         $.each(attibuteValueIds, function (i, valueId) {
           // get only previous attributes (if any) excluding the selection by current attribute
           // and then check the combinations stock with current value
@@ -99,11 +108,33 @@
 
           // check if available attributes exists in combinations
           // otherwise just disable the value
-          var combinations = self.getCombinationsByAttributeId(attributeId, availableAttributes);
+          var combinations = self.getCombinationsByAttributeId(attributeId, availableAttributes); //get the value from the pre-loaded array
           if (combinations && combinations.length > 0) {
-            self.toggleAttributeValue(valueId, self.isAvailableCombination(combinations, availableAttributes));
+            //self.toggleAttributeValue(valueId, self.isAvailableCombination(combinations, availableAttributes));
+
+            ////XD Update - also toggle "isBackorderCombination"
+            ////valueId is the id of the attribute value to change (e.g. the id of "blue" in colour)
+            //self.toggleAttributeBackorder(valueId, self.isBackorderCombination(combinations, availableAttributes));            
+
+            //self.toggleAttributeInStock(valueId, self.isInStockCombination(combinations, availableAttributes));  
+
+            var classes = self.getAttributeClasses(combinations, availableAttributes);
+            console.log(classes);
+
+            var $contentEl = $(self.settings.contentEl);
+
+            //console.log($contentEl);
+
+            var $value = $('[data-attr-value=' + valueId + ']', $contentEl);
+
+            //console.log(combinations, availableAttributes);
+            console.log(valueId, classes);
+
+            $value.removeClass('instock backorder disabled');
+            $value.addClass(classes);
+
           } else {
-            self.toggleAttributeValue(valueId, false);
+            //self.toggleAttributeValue(valueId, true); //XD Update false to true - default to enabled if no combination
           }
         });
       });
@@ -143,9 +174,9 @@
       });
     },
 
-    isAvailableCombination: function (combinations, attributes) {
+    getAttributeClasses: function (combinations, attributes) {
       // check if any combination have stock with specified values
-      // otherwise just disable the value 
+      // otherwise just disable the value
       var existedCombinations = $.grep(combinations, function (combination) {
         var valueIdsByCombinations = $.map(combination.Attributes, function (attribute) {
           return attribute.ValueIds;
@@ -156,11 +187,85 @@
           })
         });
 
-        return combination.InStock && existedAttributes.length === attributes.length;
+          return existedAttributes.length === attributes.length;
       });
 
-      return existedCombinations.length > 0;
+      var inStockCombinations = $.grep(existedCombinations, function (combination) {
+        return combination.InStock;
+      });
+      var backorderCombinations = $.grep(existedCombinations, function (combination) {
+        return !combination.InStock && combination.IsBackorder;
+      });
+      var unavailableCombinations = $.grep(existedCombinations, function (combination) {
+        return !combination.InStock && !combination.IsBackorder;
+      });
+
+      var classes = "";
+      classes = inStockCombinations.length > 0 ? "instock " : 
+        backorderCombinations.length > 0 ? "backorder " : 
+          unavailableCombinations.length > 0 ? "disabled " : "";
+
+      return classes;
     },
+
+    //isAvailableCombination: function (combinations, attributes) {
+    //  // check if any combination have stock with specified values
+    //  // otherwise just disable the value 
+    //  var existedCombinations = $.grep(combinations, function (combination) {
+    //    var valueIdsByCombinations = $.map(combination.Attributes, function (attribute) {
+    //      return attribute.ValueIds;
+    //    });
+    //    var existedAttributes = $.grep(attributes, function (attribute) {
+    //      return $.grep(attribute.values, function (valueId) {
+    //        return $.inArray(valueId, valueIdsByCombinations) !== -1;
+    //      })
+    //    });
+
+    //    return combination.InStock && existedAttributes.length === attributes.length;
+    //  });
+
+    //  return existedCombinations.length > 0;
+    //},
+
+    //isBackorderCombination: function (combinations, attributes) {
+    //  // check if any combination have stock with specified values
+    //  // otherwise just disable the value 
+    //  var existedCombinations = $.grep(combinations, function (combination) {
+    //    var valueIdsByCombinations = $.map(combination.Attributes, function (attribute) {
+    //      return attribute.ValueIds;
+    //    });
+    //    var existedAttributes = $.grep(attributes, function (attribute) {
+    //      return $.grep(attribute.values, function (valueId) {
+    //        return $.inArray(valueId, valueIdsByCombinations) !== -1;
+    //      })
+    //    });
+
+    //    return !combination.IsBackorder && existedAttributes.length === attributes.length;
+    //  });
+
+    //  return existedCombinations.length > 0;
+    //},
+
+    //isInStockCombination: function (combinations, attributes) {
+    //  console.log(combinations); //
+    //  console.log(attributes);
+    //  // check if any combination have stock with specified values
+    //  // otherwise just disable the value 
+    //  var existedCombinations = $.grep(combinations, function (combination) {
+    //    var valueIdsByCombinations = $.map(combination.Attributes, function (attribute) {
+    //      return attribute.ValueIds;
+    //    });
+    //    var existedAttributes = $.grep(attributes, function (attribute) {
+    //      return $.grep(attribute.values, function (valueId) {
+    //        return $.inArray(valueId, valueIdsByCombinations) !== -1;
+    //      })
+    //    });
+
+    //    return combination.InStock && !combination.IsBackorder && existedAttributes.length === attributes.length;
+    //  });
+
+    //  return existedCombinations.length > 0;
+    //},
 
     getAttributeValueIds: function (attributeId) {
       var $contentEl = $(this.settings.contentEl);
@@ -173,15 +278,39 @@
       }
     },
 
-    toggleAttributeValue: function (valueId, enabled) {
-      var $contentEl = $(this.settings.contentEl);
-      var $value = $('[data-attr-value=' + valueId + ']', $contentEl);
-      if (enabled) {
-        $value.removeClass('disabled');
-      } else {
-        $value.addClass('disabled');
-      }
-    },
+    //toggleAttributeValue: function (valueId, enabled) {
+    //  var $contentEl = $(this.settings.contentEl);
+    //  var $value = $('[data-attr-value=' + valueId + ']', $contentEl);
+    //  if (enabled) {
+    //    $value.removeClass('disabled');
+
+    //  } else {
+    //    $value.addClass('disabled');
+
+    //  }
+    //},
+
+    //toggleAttributeBackorder: function (valueId, enabled) {
+    //  var $contentEl = $(this.settings.contentEl);
+    //  var $value = $('[data-attr-value=' + valueId + ']', $contentEl);
+    //  if (enabled) {
+    //    $value.removeClass('backorder');
+    //  } else {
+    //    $value.addClass('backorder');
+    //  }
+    //},
+
+    //toggleAttributeInStock: function (valueId, enabled) {
+    //  var $contentEl = $(this.settings.contentEl);
+    //  var $value = $('[data-attr-value=' + valueId + ']', $contentEl);
+    //  if (enabled) {
+    //    $value.removeClass('instock');
+    //  } else {
+    //    $value.addClass('instock');
+    //  }
+    //},
+
+
 
     unselectValues: function (valueIds) {
       var $contentEl = $(this.settings.contentEl);
