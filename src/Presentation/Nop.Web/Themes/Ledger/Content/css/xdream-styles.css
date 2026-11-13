@@ -406,3 +406,107 @@
   height: 80px;
   width: 100%;
 }
+
+
+
+.attributes {
+  margin: 10px 0;
+}
+
+  .attributes dl {
+    overflow: hidden;
+    padding: 0 2px; /* fix for Chrome in Mac, the checkboxes get cut off */
+  }
+
+  .attributes dt,
+  .attribute-label {
+    display: block;
+    margin: 0 0 5px;
+    white-space: nowrap;
+    font-weight: bold;
+    color: #444;
+  }
+
+  .attributes dd,
+  .attribute-data {
+    margin: 0 0 10px;
+  }
+
+  .attributes li {
+    margin: 6px 0;
+  }
+
+  .attributes select {
+    width: auto;
+    min-width: 100px;
+    max-width: 100%;
+  }
+
+  .attributes .option-list label {
+    margin: 0 5px;
+  }
+
+  .attributes .option-list input[type=radio] {
+    width: 1.3em;
+    height: 1.3em;
+  }
+
+  .attributes .datepicker {
+    width: 280px;
+    text-align: center;
+    color: #444;
+  }
+
+  .attributes .qty-box input {
+    width: 48px;
+    height: 32px;
+    text-align: center;
+  }
+
+.attributes .option-list:not(.attribute-squares) .disabled {
+  opacity: .65;
+}
+
+.attributes .attribute-squares .disabled .attribute-square {
+  cursor: default;
+  opacity: .25;
+}
+
+.attributes .attribute-squares .disabled .attribute-square-container {
+  background: linear-gradient(to top left, rgba(0,0,0,0) 0%, rgba(0,0,0,0) calc(50% - 1.5px), #e91e63 50%, rgba(0,0,0,0) calc(50% + 1.5px), rgba(0,0,0,0) 100%), linear-gradient(to top right, rgba(0,0,0,0) 0%, rgba(0,0,0,0) calc(50% - 1.5px), #e91e63 50%, rgba(0,0,0,0) calc(50% + 1.5px), rgba(0,0,0,0) 100%);
+}
+
+.attributes .attribute-squares .tooltip-container .not-available-text {
+  font-size: 12px;
+}
+
+.attributes .attribute-squares.color-squares .tooltip-container .not-available-text {
+  margin: 5px;
+}
+
+.attributes .attribute-squares.color-squares .tooltip-container {
+  width: 120px;
+  display: none;
+}
+
+.attributes .attribute-squares.color-squares li:hover .tooltip-container {
+  margin-left: -42px;
+}
+
+.attributes .attribute-squares.color-squares .disabled .tooltip-container {
+  display: block;
+}
+
+.attributes .attribute-squares.image-squares .tooltip-container .not-available-text {
+  margin-bottom: 5px;
+  display: none;
+}
+
+.attributes .attribute-squares.image-squares .disabled .tooltip-container .not-available-text {
+  display: block;
+}
+
+.attributes select option.disabled,
+.attributes select option:disabled {
+  color: #cecece;
+}

@@ -1689,7 +1689,8 @@ input[type="button"] {
   flex: 1;
   min-width: 0;
 }
-.product-details-page .overview {
+.product-details-page .overview,
+.product-details-page .rental-attributes {
   flex: 1;
   min-width: 0;
 }
@@ -2210,6 +2211,7 @@ input[type="button"] {
 
 .rental-attributes {
   display: flex;
+  flex-direction: column;
   gap: 8px;
   margin: 14px 0;
 }
@@ -6220,7 +6222,8 @@ a.skip:hover {
   }
 
   .product-details-page .gallery,
-  .product-details-page .overview {
+  .product-details-page .overview,
+  .product-details-page .rental-attributes {
     width: 100%;
     max-width: 550px;
   }

@@ -1,4 +1,4 @@
-using Nop.Core.Domain.Catalog;
+﻿using Nop.Core.Domain.Catalog;
 
 namespace Nop.Services.Catalog;
 
@@ -85,7 +85,10 @@ public static class ProductAttributeExtensions
         //but we assume that attributes
         //which cannot have values (any value can be entered by a customer)
         //are non-combinable
-        var result = !ShouldHaveValues(productAttributeMapping);
+        var result = !ShouldHaveValues(productAttributeMapping)
+            || !productAttributeMapping.IsRequired
+                || productAttributeMapping.AttributeControlType == AttributeControlType.Checkboxes;
+
         return result;
     }
 }
