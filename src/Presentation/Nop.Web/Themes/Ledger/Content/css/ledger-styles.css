@@ -3978,7 +3978,7 @@ table.forum-table th {
    ============================================================ */
 /* Topic pages */
 .topic-page .page-body {
-  max-width: 76ch;
+  /*max-width: 76ch;*/
   color: var(--lg-ink-soft);
 }
 

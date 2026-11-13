@@ -837,7 +837,7 @@ public partial class ProductService : IProductService
         bool searchDescriptions = false,
         bool searchManufacturerPartNumber = true,
         bool searchSku = true,
-        bool searchProductTags = false,
+        bool searchProductTags = true, //XD Update
         int languageId = 0,
         IList<SpecificationAttributeOption> filteredSpecOptions = null,
         ProductSortingEnum orderBy = ProductSortingEnum.Position,

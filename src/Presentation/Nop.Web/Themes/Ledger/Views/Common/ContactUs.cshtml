@@ -1,0 +1,23 @@
+﻿@model ContactUsModel
+@{
+    Layout = "_ColumnsOne";
+
+    //title
+    NopHtml.AddTitleParts(T("PageTitle.ContactUs").Text);
+    //page class
+    NopHtml.AppendPageCssClassParts("html-contact-page");
+}
+<div class="page contact-page">
+    @*<div class="page-title">
+        <h1>@T("PageTitle.ContactUs")</h1>
+    </div>*@
+    <div class="page-body">
+                
+		<iframe style="width: 100%; height: 2000px; border: none;" src="https://help.xdsports.uk/support/home" title="XDream Support Desk"></iframe>
+
+		@await Component.InvokeAsync("TopicBlock", new { systemName = "ContactUs" })
+        @await Component.InvokeAsync("Widget", new { widgetZone = PublicWidgetZones.ContactUsTop, additionalData = Model })
+
+        @await Component.InvokeAsync("Widget", new { widgetZone = PublicWidgetZones.ContactUsBottom, additionalData = Model })
+    </div>
+</div>

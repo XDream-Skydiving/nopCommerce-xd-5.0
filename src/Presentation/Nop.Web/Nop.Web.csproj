@@ -64,6 +64,12 @@
     <Content Update="**\*.config;**\*.json" CopyToOutputDirectory="Never" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Update="Themes\Ledger\Views\Topic\TopicDetails.cshtml">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </Content>
+  </ItemGroup>
+
   <!-- Plugin models are loaded at runtime and cannot be referenced by Nop.Web during compilation.
        Keep mirrored theme views as publishable content, but exclude them from Razor generation. -->
   <Target Name="ExcludeThemePluginViewsFromRazorCompilation" AfterTargets="ResolveRazorGenerateInputs">
