@@ -3001,7 +3001,7 @@ table.forum-table th {
 
 .payment-info .info td:first-child {
   margin: 0 0 10px;
-  text-align: right;
+  /*text-align: right;*/
 }
 
 .payment-info .info td:first-child:not(:only-child) {

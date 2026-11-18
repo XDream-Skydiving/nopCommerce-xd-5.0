@@ -450,6 +450,10 @@ public partial class ShoppingCartModelFactory : IShoppingCartModelFactory
                     rentalStartDate, rentalEndDate);
         }
 
+        //XD Update: stock availability
+        var stockAvailability = await _productService.FormatStockMessageAsync(product, sci.AttributesXml);
+        cartItemModel.StockAvailability = stockAvailability;
+
         //unit prices
         var currentCurrency = await _workContext.GetWorkingCurrencyAsync();
         if (product.CallForPrice &&

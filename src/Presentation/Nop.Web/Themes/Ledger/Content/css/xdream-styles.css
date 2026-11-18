@@ -536,3 +536,7 @@ tr.plannedMoveRecord {
 .rigToTable .nomain {
   background-color: lightgreen;
 }
+
+.payment-info .info td h3{
+    text-align: center;
+}

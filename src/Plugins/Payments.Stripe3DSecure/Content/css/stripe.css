@@ -133,12 +133,16 @@
 
     .payment-info .info td:first-child,
     .payment-info .info td + td {
-        text-align: inherit !important;
+        /*text-align: inherit !important;*/
     }
 
-    .payment-info .info tr:first-child td:first-child {
-        padding-top: 10px;
-    }
+  .payment-info h3{
+      text-align: center !important;
+  }
+
+  .payment-info .info tr:first-child td:first-child {
+    padding-top: 10px;
+  }
 
     .payment-info .info td:last-child {
         padding-left: 5px !important;

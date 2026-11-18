@@ -77,6 +77,9 @@
     <Content Update="Themes\Ledger\Views\Shared\_ColumnsOne.cshtml">
       <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
     </Content>
+    <Content Update="Themes\Ledger\Views\Shared\_ShoppingCartItems.cshtml">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </Content>
     <Content Update="Themes\Ledger\Views\Topic\TopicDetails.cshtml">
       <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
     </Content>

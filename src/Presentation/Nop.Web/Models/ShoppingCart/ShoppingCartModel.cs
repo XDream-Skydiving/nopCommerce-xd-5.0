@@ -81,6 +81,7 @@ public partial record ShoppingCartModel : BaseNopModel
         public string AttributeInfo { get; set; }
         public string RecurringInfo { get; set; }
         public string RentalInfo { get; set; }
+        public string StockAvailability { get; set; } //XD Update
         public bool AllowItemEditing { get; set; }
         public bool DisableRemoval { get; set; }
         public IList<string> Warnings { get; set; }

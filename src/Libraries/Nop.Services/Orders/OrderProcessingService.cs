@@ -1281,7 +1281,7 @@ public partial class OrderProcessingService : IOrderProcessingService
     /// <param name="details">Place order container</param>
     /// <param name="order">Order</param>
     /// <returns>A task that represents the asynchronous operation</returns>
-    protected virtual async Task MoveShoppingCartItemsToOrderItemsAsync(PlaceOrderContainer details, Order order)
+    protected virtual async Task MoveShoppingCartItemsToOrderItemsWithoutInventoryAdjustmentAsync(PlaceOrderContainer details, Order order)
     {
         foreach (var sc in details.Cart)
         {
@@ -1337,14 +1337,36 @@ public partial class OrderProcessingService : IOrderProcessingService
             //gift cards
             await AddGiftCardsAsync(product, sc.AttributesXml, sc.Quantity, orderItem, scUnitPriceExclTax.price);
 
-            //inventory
-            await _productService.AdjustInventoryAsync(product, -sc.Quantity, sc.AttributesXml,
-                string.Format(await _localizationService.GetResourceAsync("Admin.StockQuantityHistory.Messages.PlaceOrder"), order.Id));
+            ////inventory //XD update - this needs doing after notification emails so we can show stock
+            //await _productService.AdjustInventoryAsync(product, -sc.Quantity, sc.AttributesXml,
+            //    string.Format(await _localizationService.GetResourceAsync("Admin.StockQuantityHistory.Messages.PlaceOrder"), order.Id));
 
             await _eventPublisher.PublishAsync(new ShoppingCartItemMovedToOrderItemEvent(sc, orderItem));
         }
 
-        await _shoppingCartService.ClearShoppingCartAsync(details.Customer, order.StoreId);
+        //XD update - this needs doing after notification emails so we can show stock
+        //await _shoppingCartService.ClearShoppingCartAsync(details.Customer, order.StoreId);
+    }
+
+    /// <summary>
+    /// Move shopping cart items to order items
+    /// </summary>
+    /// <param name="details">Place order container</param>
+    /// <param name="order">Order</param>
+    protected virtual async Task RemoveShoppingCartItemsFromStock(PlaceOrderContainer details, Order order)
+    {
+        foreach (var sc in details.Cart)
+        {
+            var product = await _productService.GetProductByIdAsync(sc.ProductId);
+
+            //inventory
+            await _productService.AdjustInventoryAsync(product, -sc.Quantity, sc.AttributesXml,
+                string.Format(await _localizationService.GetResourceAsync("Admin.StockQuantityHistory.Messages.PlaceOrder"), order.Id));
+        }
+
+        //clear shopping cart
+        foreach (var sci in details.Cart.ToList())
+            await _shoppingCartService.DeleteShoppingCartItemAsync(sci, false);
     }
 
     /// <summary>
@@ -1619,7 +1641,7 @@ public partial class OrderProcessingService : IOrderProcessingService
                     result.PlacedOrder = order;
 
                     //move shopping cart items to order items
-                    await MoveShoppingCartItemsToOrderItemsAsync(placeOrderContainer, order);
+                    await MoveShoppingCartItemsToOrderItemsWithoutInventoryAdjustmentAsync(placeOrderContainer, order);
 
                     //discount usage history
                     await SaveDiscountUsageHistoryAsync(placeOrderContainer, order);
@@ -1631,8 +1653,11 @@ public partial class OrderProcessingService : IOrderProcessingService
                     if (placeOrderContainer.IsRecurringShoppingCart)
                         await CreateFirstRecurringPaymentAsync(processPaymentRequest, order);
 
-                    //notifications
+                    //notifications //Needs to include stock/dates
                     await SendNotificationsAndSaveNotesAsync(order);
+
+                    await RemoveShoppingCartItemsFromStock(details, order); //XD Update: separate function to remove stock, after messages have been sent
+
 
                     //reset checkout data
                     await _shoppingCartService.ResetCheckoutDataAsync(placeOrderContainer.Customer,
@@ -2297,6 +2322,13 @@ public partial class OrderProcessingService : IOrderProcessingService
 
         shipment.ReadyForPickupDateUtc = DateTime.UtcNow;
         await _shipmentService.UpdateShipmentAsync(shipment);
+
+        //XD Update: check whether we have more items to ship (copied from ship function)
+        //if (await _orderService.HasItemsToAddToShipmentAsync(order) || await _orderService.HasItemsToShipAsync(order))
+        //    order.ShippingStatusId = (int)ShippingStatus.PartiallyShipped;
+        //else
+        //    order.ShippingStatusId = (int)ShippingStatus.Shipped;
+        //await _orderService.UpdateOrderAsync(order);
 
         await AddOrderNoteAsync(order, $"Shipment# {shipment.Id} has been ready for pickup");
 
