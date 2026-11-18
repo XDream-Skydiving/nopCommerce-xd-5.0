@@ -24,5 +24,12 @@ public partial record LowStockProductModel : BaseNopEntityModel
     [NopResourceDisplayName("Admin.Catalog.Products.Fields.Published")]
     public bool Published { get; set; }
 
+    //XD Update
+    [NopResourceDisplayName("Admin.Catalog.Products.Fields.Manufacturer")]
+    public string Manufacturer { get; set; }
+
+    [NopResourceDisplayName("Admin.Catalog.Products.Fields.NotifyAdminForQtyBelow")]
+    public int NotifyAdminForQtyBelow { get; set; }
+
     #endregion
 }

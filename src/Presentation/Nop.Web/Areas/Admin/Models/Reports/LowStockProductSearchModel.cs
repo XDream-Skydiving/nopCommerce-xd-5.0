@@ -14,6 +14,7 @@ public partial record LowStockProductSearchModel : BaseSearchModel
     public LowStockProductSearchModel()
     {
         AvailablePublishedOptions = new List<SelectListItem>();
+        SearchPublishedId = 1;
     }
 
     #endregion

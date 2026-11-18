@@ -240,4 +240,5 @@ public partial interface IManufacturerService
     /// <param name="discountManufacturerMapping">Discount-manufacturer mapping</param>
     /// <returns>A task that represents the asynchronous operation</returns>
     Task InsertDiscountManufacturerMappingAsync(DiscountManufacturerMapping discountManufacturerMapping);
+    Task<string> GetManufacturerNameByProductIdAsync(int id);
 }

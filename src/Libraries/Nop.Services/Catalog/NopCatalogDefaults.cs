@@ -185,6 +185,19 @@ public static partial class NopCatalogDefaults
 
     #region Manufacturers
 
+
+    /// <summary>
+    /// Gets a key for caching //XD Update
+    /// </summary>
+    /// <remarks>
+    /// {0} : product ID
+    /// {1} : show hidden records?
+    /// {2} : current customer ID
+    /// {3} : store ID
+    /// </remarks>
+    public static CacheKey ProductManufacturerNameByProductCacheKey => new("Nop.productmanufacturer.byproduct.string.{0}-{1}-{2}-{3}");
+
+
     /// <summary>
     /// Gets a key for caching
     /// </summary>

@@ -28,6 +28,7 @@ public partial class ReportModelFactory : IReportModelFactory
     protected readonly ICustomerService _customerService;
     protected readonly IDateTimeHelper _dateTimeHelper;
     protected readonly ILocalizationService _localizationService;
+    private readonly IManufacturerService _manufacturerService;
     protected readonly IOrderReportService _orderReportService;
     protected readonly IPriceFormatter _priceFormatter;
     protected readonly IProductAttributeFormatter _productAttributeFormatter;
@@ -45,6 +46,7 @@ public partial class ReportModelFactory : IReportModelFactory
         ICustomerService customerService,
         IDateTimeHelper dateTimeHelper,
         ILocalizationService localizationService,
+        IManufacturerService manufacturerService,
         IOrderReportService orderReportService,
         IPriceFormatter priceFormatter,
         IProductAttributeFormatter productAttributeFormatter,
@@ -58,6 +60,7 @@ public partial class ReportModelFactory : IReportModelFactory
         _customerService = customerService;
         _dateTimeHelper = dateTimeHelper;
         _localizationService = localizationService;
+        _manufacturerService = manufacturerService;
         _orderReportService = orderReportService;
         _priceFormatter = priceFormatter;
         _productAttributeFormatter = productAttributeFormatter;
@@ -266,7 +269,8 @@ public partial class ReportModelFactory : IReportModelFactory
         searchModel.AvailablePublishedOptions.Add(new SelectListItem
         {
             Value = "0",
-            Text = await _localizationService.GetResourceAsync("Admin.Reports.LowStock.SearchPublished.All")
+            Text = await _localizationService.GetResourceAsync("Admin.Reports.LowStock.SearchPublished.All"),
+            Selected = true //XD update: default to published
         });
         searchModel.AvailablePublishedOptions.Add(new SelectListItem
         {
@@ -280,7 +284,7 @@ public partial class ReportModelFactory : IReportModelFactory
         });
 
         //prepare page parameters
-        searchModel.SetGridPageSize();
+        searchModel.SetGridPageSize(500); //XD Update
 
         return searchModel;
     }
@@ -313,8 +317,12 @@ public partial class ReportModelFactory : IReportModelFactory
             Id = product.Id,
             Name = product.Name,
 
+            Manufacturer = await _manufacturerService.GetManufacturerNameByProductIdAsync(product.Id),
+            NotifyAdminForQtyBelow = product.NotifyAdminForQuantityBelow,
+
             ManageInventoryMethod = await _localizationService.GetLocalizedEnumAsync(product.ManageInventoryMethod),
             StockQuantity = await _productService.GetTotalStockQuantityAsync(product),
+
             Published = product.Published
         }).ToListAsync());
 
@@ -334,10 +342,15 @@ public partial class ReportModelFactory : IReportModelFactory
                     .FormatAttributesAsync(product, combination.AttributesXml, currentCustomer, currentStore, "<br />", true, true, true, false),
                 ManageInventoryMethod = await _localizationService.GetLocalizedEnumAsync(product.ManageInventoryMethod),
 
+                Manufacturer = await _manufacturerService.GetManufacturerNameByProductIdAsync(product.Id),
+                NotifyAdminForQtyBelow = combination.NotifyAdminForQuantityBelow,
+
                 StockQuantity = combination.StockQuantity,
                 Published = product.Published
             };
         }).ToListAsync());
+
+        lowStockProductModels = await lowStockProductModels.OrderBy(mfr => mfr.Manufacturer).ToListAsync(); //XD Update
 
         var pagesList = lowStockProductModels.ToPagedList(searchModel);
 

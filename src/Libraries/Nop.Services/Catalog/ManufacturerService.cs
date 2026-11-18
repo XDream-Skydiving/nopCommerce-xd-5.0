@@ -563,4 +563,45 @@ public partial class ManufacturerService : IManufacturerService
     }
 
     #endregion
+
+    #region "XD Methods"
+
+    /// <summary>
+    /// XD - Gets First Manfuacturer name for low stock report
+    /// </summary>
+    /// <param name="manufacturerId">Manufacturer identifier</param>
+    /// <param name="pageIndex">Page index</param>
+    /// <param name="pageSize">Page size</param>
+    /// <param name="showHidden">A value indicating whether to show hidden records</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the product manufacturer name
+    /// </returns>
+    public virtual async Task<String> GetManufacturerNameByProductIdAsync(int productId)
+    {
+        if (productId == 0)
+            return "";
+
+        var store = await _storeContext.GetCurrentStoreAsync();
+        var customer = await _workContext.GetCurrentCustomerAsync();
+
+        var key = _staticCacheManager
+            .PrepareKeyForDefaultCache(NopCatalogDefaults.ProductManufacturerNameByProductCacheKey, productId, true, customer, store);
+        //Fixed? Use a different cache key to the manufacturer id list
+
+        var query = from pm in _productManufacturerRepository.Table
+                    join m in _manufacturerRepository.Table on pm.ManufacturerId equals m.Id
+                    where pm.ProductId == productId && !m.Deleted
+                    orderby m.DisplayOrder, m.Name, pm.Id
+                    select m;
+
+        var manufacturer = query.Select(m => m.Name).FirstOrDefaultAsync();
+
+        if (manufacturer == null)
+            return "";
+
+        return await _staticCacheManager.GetAsync<String>(key, async () => await manufacturer);
+    }
+
+    #endregion
 }
