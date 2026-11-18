@@ -333,7 +333,8 @@ public partial class MessageTokenProvider : IMessageTokenProvider
                     new[]
                     {
                         "%Order.NewNoteText%",
-                        "%Order.OrderNoteAttachmentUrl%"
+                        "%Order.OrderNoteAttachmentUrl%",
+                        "%Order.CheckoutAttributes%" //XD Update
                     }
                 },
 
@@ -615,6 +616,17 @@ public partial class MessageTokenProvider : IMessageTokenProvider
                 {
                     sb.AppendLine("<br />");
                     sb.AppendLine(string.Format(await _localizationService.GetResourceAsync("Messages.Order.Product(s).SKU", languageId), WebUtility.HtmlEncode(sku)));
+                }
+            }
+
+            //XD Update: show availability / dispatch on email
+            if (product.IsShipEnabled)
+            {
+                var stockMessage = await _productService.FormatStockMessageAsync(product, orderItem.AttributesXml);
+                if (!string.IsNullOrEmpty(stockMessage))
+                {
+                    sb.AppendLine("<br />");
+                    sb.AppendLine(string.Format(await _localizationService.GetResourceAsync("Messages.Order.Product(s).DeliveryDate", languageId), WebUtility.HtmlEncode(stockMessage)));
                 }
             }
 

@@ -436,7 +436,7 @@ public partial class ShipmentService : IShipmentService
                 shipmentTracker = await shippingRateComputationMethod.GetShipmentTrackerAsync();
         }
 
-        return shipmentTracker;
+        return shipmentTracker ?? new DefaultShipmentTracker(); //XD Update
     }
 
     #endregion

@@ -21,7 +21,7 @@
 
         var selectedManageInventoryMethodId = $("#@Html.IdFor(model => model.ManageInventoryMethodId)").val();
         if (selectedManageInventoryMethodId == dontManageStockId) {
-            $('#pnlProductAvailabilityRange').hideElement();
+            //$('#pnlProductAvailabilityRange').hideElement(); //XD update to show product availability range even if stock is not managed
             $('#pnlUseMultipleWarehouses').hideElement();
             $('#pnlWarehouse').hideElement();
             $('#pnlMultipleWarehouses').hideElement();
