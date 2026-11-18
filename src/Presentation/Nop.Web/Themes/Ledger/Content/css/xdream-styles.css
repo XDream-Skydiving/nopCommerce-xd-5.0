@@ -510,3 +510,29 @@
 .attributes select option:disabled {
   color: #cecece;
 }
+
+
+/*XD Update*/
+tr.currentMoveRecord {
+  background-color: palegreen;
+}
+
+tr.cancelledMoveRecord {
+  filter: opacity(0.3);
+}
+
+tr.plannedMoveRecord {
+  background-color: palegoldenrod;
+}
+
+.form-control.input-validation-error {
+  border-color: red;
+}
+
+.rigToTable .main {
+  background-color: lightgoldenrodyellow;
+}
+
+.rigToTable .nomain {
+  background-color: lightgreen;
+}

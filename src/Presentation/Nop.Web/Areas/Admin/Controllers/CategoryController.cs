@@ -251,6 +251,7 @@ public partial class CategoryController : BaseAdminController
         if (ModelState.IsValid)
         {
             var prevPictureId = category.PictureId;
+            var prevBannerPictureId = category.BannerPictureId; //XD Update
 
             //if parent category changes, we need to clear cache for previous parent category
             if (category.ParentCategoryId != model.ParentCategoryId)
@@ -297,6 +298,14 @@ public partial class CategoryController : BaseAdminController
                 var prevPicture = await _pictureService.GetPictureByIdAsync(prevPictureId);
                 if (prevPicture != null)
                     await _pictureService.DeletePictureAsync(prevPicture);
+            }
+
+            //XD Update
+            if (prevBannerPictureId > 0 && prevBannerPictureId != category.BannerPictureId)
+            {
+                var prevBannerPicture = await _pictureService.GetPictureByIdAsync(prevBannerPictureId);
+                if (prevBannerPicture != null)
+                    await _pictureService.DeletePictureAsync(prevBannerPicture);
             }
 
             //update picture seo file name

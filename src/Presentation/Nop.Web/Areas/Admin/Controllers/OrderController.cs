@@ -2089,6 +2089,10 @@ public partial class OrderController : BaseAdminController
                 CreatedOnUtc = DateTime.UtcNow
             });
 
+            //XD Update
+            order.ShippingStatus = ShippingStatus.ShipmentCreated; 
+            await _orderService.UpdateOrderAsync(order);
+
             await _eventPublisher.PublishAsync(new ShipmentCreatedEvent(shipment));
 
             if (!string.IsNullOrWhiteSpace(shipment.TrackingNumber))
@@ -2420,7 +2424,8 @@ public partial class OrderController : BaseAdminController
             bytes = stream.ToArray();
         }
 
-        return File(bytes, MimeTypes.ApplicationPdf, $"packagingslip_{shipment.Id}.pdf");
+        return File(bytes, MimeTypes.ApplicationPdf, $"Order{shipment.OrderId}-Shipment{shipment.Id}.pdf"); //XD Update Filename
+        //return File(bytes, MimeTypes.ApplicationPdf, $"packagingslip_{shipment.Id}.pdf");
     }
 
     [HttpPost, ActionName("ShipmentList")]

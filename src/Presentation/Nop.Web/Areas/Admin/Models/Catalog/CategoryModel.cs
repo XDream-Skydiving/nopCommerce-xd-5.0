@@ -70,6 +70,11 @@ public partial record CategoryModel : BaseNopEntityModel, IAclSupportedModel, ID
     [NopResourceDisplayName("Admin.Catalog.Categories.Fields.Picture")]
     public int PictureId { get; set; }
 
+    //XD Update
+    [UIHint("Picture")]
+    [NopResourceDisplayName("Admin.Catalog.Categories.Fields.BannerPicture")]
+    public int BannerPictureId { get; set; }
+
     [NopResourceDisplayName("Admin.Catalog.Categories.Fields.PageSize")]
     public int PageSize { get; set; }
 

@@ -85,6 +85,14 @@ public class CheckMoneyOrderPaymentProcessor : BasePlugin, IPaymentMethod
         //for example, hide this payment method if all products in the cart are downloadable
         //or hide this payment method if current customer is from certain country
 
+        //XD Update: Restrict payment method for amounts
+        var total = await _orderTotalCalculationService.GetShoppingCartTotalAsync(cart, false, false);
+        var threshold = await _settingService.GetSettingByKeyAsync<decimal>("checkmoneyorderpaymentsettings.disablebelowamount", 0);
+
+        if (total.shoppingCartTotal.HasValue &&
+            total.shoppingCartTotal.Value < threshold)
+            return true;
+
         if (_checkMoneyOrderPaymentSettings.ShippableProductRequired && !await _shoppingCartService.ShoppingCartRequiresShippingAsync(cart))
             return true;
 

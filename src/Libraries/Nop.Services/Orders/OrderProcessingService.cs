@@ -766,7 +766,8 @@ public partial class OrderProcessingService : IOrderProcessingService
             CustomValuesXml = processPaymentRequest.CustomValues.SerializeToXml(),
             VatNumber = details.VatNumber,
             CreatedOnUtc = DateTime.UtcNow,
-            CustomOrderNumber = string.Empty
+            CustomOrderNumber = string.Empty,
+            AdminComment = string.Empty
         };
 
         if (details.BillingAddress is null)

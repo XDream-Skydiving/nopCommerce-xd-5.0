@@ -197,7 +197,7 @@ public partial class GiftCardService : IGiftCardService
     /// <returns>Result</returns>
     public virtual string GenerateGiftCardCode()
     {
-        var length = 13;
+        var length = 6; //XD update
         var result = Guid.NewGuid().ToString();
         if (result.Length > length)
             result = result[0..length];

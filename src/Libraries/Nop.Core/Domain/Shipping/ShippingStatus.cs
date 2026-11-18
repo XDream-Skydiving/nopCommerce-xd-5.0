@@ -1,4 +1,4 @@
-namespace Nop.Core.Domain.Shipping;
+﻿namespace Nop.Core.Domain.Shipping;
 
 /// <summary>
 /// Represents the shipping status enumeration
@@ -28,5 +28,10 @@ public enum ShippingStatus
     /// <summary>
     /// Delivered
     /// </summary>
-    Delivered = 40
+    Delivered = 40,
+
+        /// <summary>
+        /// Shipment Created
+        /// </summary>
+        ShipmentCreated = 22, //XD Update
 }
