@@ -1427,8 +1427,9 @@ public partial class OrderTotalCalculationService : IOrderTotalCalculationServic
     /// </returns>
     public virtual async Task<decimal> CalculatePaymentAdditionalFeeAsync(IList<ShoppingCartItem> cart, decimal fee, bool usePercentage)
     {
-        if (!usePercentage || fee <= 0)
-            return fee;
+        //XD Update
+        //if (!usePercentage || fee <= 0)
+        //    return fee;
 
         var orderTotalWithoutPaymentFee = (await GetShoppingCartTotalAsync(cart, usePaymentMethodAdditionalFee: false)).shoppingCartTotal ?? 0;
         var result = (decimal)((float)orderTotalWithoutPaymentFee * (float)fee / 100f);

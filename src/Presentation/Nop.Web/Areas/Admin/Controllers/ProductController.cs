@@ -740,40 +740,48 @@ public partial class ProductController : BaseAdminController
         await _productAttributeService.UpdateProductAttributeMappingAsync(productAttributeMapping);
     }
 
-    protected virtual async Task GenerateAttributeCombinationsAsync(Product product, IList<int> allowedAttributeIds = null)
-    {
-        var allAttributesXml = await _productAttributeParser.GenerateAllCombinationsAsync(product, true, allowedAttributeIds);
-        foreach (var attributesXml in allAttributesXml)
+    protected virtual async Task GenerateAttributeCombinationsAsync(Product product, IList<int> allowedAttributeIds = null,
+            int? defaultStockQuantity = 0, bool? defaultAllowOutOfStock = false, int? defaultTargetStock = 1)
         {
-            var existingCombination = await _productAttributeParser.FindProductAttributeCombinationAsync(product, attributesXml);
-
-            //already exists?
-            if (existingCombination != null)
-                continue;
-
-            //new one
-            var warnings = new List<string>();
-            warnings.AddRange(await _shoppingCartService.GetShoppingCartItemAttributeWarningsAsync(await _workContext.GetCurrentCustomerAsync(),
-                ShoppingCartType.ShoppingCart, product, 1, attributesXml, true, true, true));
-            if (warnings.Any())
-                continue;
-
-            //save combination
-            var combination = new ProductAttributeCombination
+            var allAttributesXml = await _productAttributeParser.GenerateAllCombinationsAsync(product, true, allowedAttributeIds);
+            foreach (var attributesXml in allAttributesXml)
             {
-                ProductId = product.Id,
-                AttributesXml = attributesXml,
-                StockQuantity = 0,
-                AllowOutOfStockOrders = false,
-                Sku = null,
-                ManufacturerPartNumber = null,
-                Gtin = null,
-                OverriddenPrice = null,
-                NotifyAdminForQuantityBelow = 1
-            };
-            await _productAttributeService.InsertProductAttributeCombinationAsync(combination);
+                var existingCombination = await _productAttributeParser.FindProductAttributeCombinationAsync(product, attributesXml);
+
+                //already exists?
+                if (existingCombination != null)
+                    continue;
+
+                //new one
+                var warnings = new List<string>();
+                warnings.AddRange(await _shoppingCartService.GetShoppingCartItemAttributeWarningsAsync(await _workContext.GetCurrentCustomerAsync(),
+                    ShoppingCartType.ShoppingCart, product, 1, attributesXml, true, true));
+                if (warnings.Count != 0)
+                    continue;
+
+                //save combination
+                var combination = new ProductAttributeCombination
+                {
+                    ProductId = product.Id,
+                    AttributesXml = attributesXml,
+                    StockQuantity = defaultStockQuantity.Value,
+                    AllowOutOfStockOrders = defaultAllowOutOfStock.Value,
+                    Sku = null,
+                    ManufacturerPartNumber = null,
+                    Gtin = null,
+                    OverriddenPrice = null,
+                    NotifyAdminForQuantityBelow = defaultTargetStock.Value
+                };
+                await _productAttributeService.InsertProductAttributeCombinationAsync(combination);
+            }
         }
-    }
+
+        protected virtual async Task DeleteAllAttributeCombinationsAsync(Product product)
+        {
+            var combinations = await _productAttributeService.GetAllProductAttributeCombinationsAsync(product.Id);
+
+            await _productAttributeService.DeleteProductAttributeCombinationsAsync(combinations);
+        }
 
     protected virtual async Task PingVideoUrlAsync(string videoUrl)
     {
@@ -3966,7 +3974,8 @@ public partial class ProductController : BaseAdminController
     [HttpPost]
     [CheckPermission(StandardPermission.Catalog.PRODUCTS_CREATE_EDIT_DELETE)]
     [CheckPermission(StandardPermission.Catalog.PRODUCTS_VIEW)]
-    public virtual async Task<IActionResult> ProductAttributeCombinationGeneratePopup(IFormCollection form, ProductAttributeCombinationModel model)
+    public virtual async Task<IActionResult> ProductAttributeCombinationGeneratePopup(IFormCollection form, ProductAttributeCombinationModel model,
+        bool allowOutOfStockOrders, int stockQuantity, int notifyAdminForQuantityBelow)
     {
         //try to get a product with the specified id
         var product = await _productService.GetProductByIdAsync(model.ProductId);
@@ -4011,7 +4020,10 @@ public partial class ProductController : BaseAdminController
             return View(model);
         }
 
-        await GenerateAttributeCombinationsAsync(product, allowedAttributeIds);
+        //XD Update: pass chosen stock values
+        await GenerateAttributeCombinationsAsync(product, allowedAttributeIds, stockQuantity, allowOutOfStockOrders, notifyAdminForQuantityBelow);
+
+        //await GenerateAttributeCombinationsAsync(product, allowedAttributeIds);
 
         ViewBag.RefreshPage = true;
 
@@ -4124,6 +4136,24 @@ public partial class ProductController : BaseAdminController
             return Content("This is not your product");
 
         await GenerateAttributeCombinationsAsync(product);
+
+        return Json(new { Success = true });
+    }
+
+    [HttpPost]
+    [CheckPermission(StandardPermission.Catalog.PRODUCTS_CREATE_EDIT_DELETE)]
+    [CheckPermission(StandardPermission.Catalog.PRODUCTS_VIEW)]
+    public virtual async Task<IActionResult> DeleteAllAttributeCombinations(int productId)
+    {
+        var product = await _productService.GetProductByIdAsync(productId);
+        if (product == null)
+            return NotFound();
+
+        var currentVendor = await _workContext.GetCurrentVendorAsync();
+        if (currentVendor != null && product.VendorId != currentVendor.Id)
+            return NotFound();
+
+        await DeleteAllAttributeCombinationsAsync(product);
 
         return Json(new { Success = true });
     }
@@ -4414,7 +4444,7 @@ public partial class ProductController : BaseAdminController
                 TaxCategoryId = _defaultTaxCategoryId,
                 UnlimitedDownloads = true,
                 IsShipEnabled = true,
-                AllowCustomerReviews = true,
+                AllowCustomerReviews = false, //XD update
                 VisibleIndividually = true,
                 ProductType = ProductType.SimpleProduct,
                 VendorId = _vendorId

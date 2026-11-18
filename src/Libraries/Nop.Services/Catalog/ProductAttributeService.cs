@@ -461,6 +461,16 @@ public partial class ProductAttributeService : IProductAttributeService
     }
 
     /// <summary>
+    /// Deletes product attribute combinations
+    /// </summary>
+    /// <param name="combination">Product attribute combination</param>
+    /// <returns>A task that represents the asynchronous operation</returns>
+    public virtual async Task DeleteProductAttributeCombinationsAsync(IList<ProductAttributeCombination> combinations)
+    {
+        await _productAttributeCombinationRepository.DeleteAsync(combinations);
+    }
+
+    /// <summary>
     /// Gets all product attribute combinations
     /// </summary>
     /// <param name="productId">Product identifier</param>

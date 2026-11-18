@@ -271,6 +271,13 @@ public partial interface IProductAttributeService
     Task DeleteProductAttributeCombinationAsync(ProductAttributeCombination combination);
 
     /// <summary>
+    /// Deletes product attribute combinations
+    /// </summary>
+    /// <param name="combination">Product attribute combinations</param>
+    /// <returns>A task that represents the asynchronous operation</returns>
+    Task DeleteProductAttributeCombinationsAsync(IList<ProductAttributeCombination> combinations);
+
+    /// <summary>
     /// Gets all product attribute combinations
     /// </summary>
     /// <param name="productId">Product identifier</param>

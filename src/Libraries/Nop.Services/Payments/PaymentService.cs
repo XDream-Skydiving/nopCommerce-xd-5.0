@@ -141,8 +141,8 @@ public partial class PaymentService : IPaymentService
             return decimal.Zero;
 
         var result = await paymentMethod.GetAdditionalHandlingFeeAsync(cart);
-        if (result < decimal.Zero)
-            result = decimal.Zero;
+        //if (result < decimal.Zero)
+        //    result = decimal.Zero; XD Update
 
         if (!_shoppingCartSettings.RoundPricesDuringCalculation)
             return result;

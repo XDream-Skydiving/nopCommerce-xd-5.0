@@ -38,10 +38,10 @@
         </h1>
         <div class="float-right">
             <button type="submit" name="save" class="btn btn-primary">
-                <i class="far fa-floppy-disk"></i>
+                <i class="far fa-save"></i>
                 @T("Admin.Catalog.Products.ProductAttributes.AttributeCombinations.Generate")
             </button>
-            @await Component.InvokeAsync(typeof(AdminWidgetViewComponent), new { widgetZone = AdminWidgetZones.ProductAttributeCombinationDetailsButtons, additionalData = Model })
+            @await Component.InvokeAsync("AdminWidget", new { widgetZone = AdminWidgetZones.ProductAttributeCombinationDetailsButtons, additionalData = Model })
         </div>
     </div>
     <section class="content">
@@ -72,6 +72,45 @@
                             </div>
                         </div>
                     }
+
+					<div class="card-header">
+						Values
+					</div>
+					<div class="card-body">
+						
+						<div class="form-group row">
+							<div class="col-sm-4">
+								<nop-label asp-for="StockQuantity" />
+							</div>
+							<div class="col-sm-8">
+								<nop-editor asp-for="StockQuantity" />
+								<span asp-validation-for="StockQuantity"></span>
+							</div>
+						</div>
+						
+						<div class="form-group row">
+							<div class="col-sm-4">
+								<nop-label asp-for="AllowOutOfStockOrders" />
+							</div>
+							<div class="col-sm-8">
+								<nop-editor asp-for="AllowOutOfStockOrders" />
+								<span asp-validation-for="AllowOutOfStockOrders"></span>
+							</div>
+						</div>
+						
+						<div class="form-group row">
+							<div class="col-sm-4">
+								<nop-label asp-for="NotifyAdminForQuantityBelow" />
+							</div>
+							<div class="col-sm-8">
+								<nop-editor asp-for="NotifyAdminForQuantityBelow" />
+								<span asp-validation-for="NotifyAdminForQuantityBelow"></span>
+							</div>
+						</div>
+
+					</div>
+
+
                 </div>
             </div>
         </div>
